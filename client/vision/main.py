@@ -1,10 +1,7 @@
 import cv2
 from deepface import DeepFace
 import threading
-import time
-import numpy as np
-import sys
-np.set_printoptions(threshold=sys.maxsize)
+from operator import itemgetter
 
 import queue
 import sounddevice as sd
@@ -13,14 +10,19 @@ import json
 
 prev_dom = ""
 
-try:
-    with open('../frontend/my-app/src/fer.txt', '2') as file:
-        file.write("")
-except Exception as e:
-    print(e)
+emotion_list = ["", "", "", "", "", ""]
+
+def enew(new_emotion):
+    emotion_list[4] = emotion_list[3]
+    emotion_list[3] = emotion_list[2]
+    emotion_list[2] = emotion_list[1]
+    emotion_list[1] = emotion_list[0]
+    emotion_list[0] = new_emotion
+
 
 def voice():
     model_path = "vosk-model-en-us-0.22"
+    words = ""
 
     try:
         model = vosk.Model(model_path)
@@ -62,10 +64,11 @@ def voice():
                     result = recognizer.Result()
                     result_dict = json.loads(result)
                     rec_text = result_dict.get('text', '')
-
+                    emotion_list[5] = str(rec_text)
                     try:
-                        with open('../frontend/my-app/src/fer.txt', 'a') as file:
-                            file.write( str(time.time()) + "," + str(rec_text) + "\n")
+                        with open('../frontend/my-app/src/fer.txt', 'w') as file:
+                            for i in emotion_list:
+                                file.write( str(i) + "\n")
                     except Exception as e:
                         print(e)
 
@@ -145,28 +148,37 @@ while True:
         for result in results_to_draw:
             dominant_emotion = result['dominant_emotion'].upper()
 
-            if result['face_confidence'] > 0.49:
+            if result['face_confidence'] > 0.49 and result['dominant_emotion'] != prev_dom:
                 es = result['emotion']
 
-                emotion_scores_list = [
-                    str(time.time()),
-                    str(result['dominant_emotion']),
-                    str(es['angry']),
-                    str(es['disgust']),
-                    str(es['fear']),
-                    str(es['happy']),
-                    str(es['sad']),
-                    str(es['surprise']),
-                    str(es['neutral'])
+                emotion_scores_list1 = [
+                    ["angry", es['angry']],
+                    ["disgust", es['disgust']],
+                    ["fear", es['fear']],
+                    ["happy", es['happy']],
+                    ["sad", es['sad']],
+                    ["suprise", es['surprise']],
+                    ["neutral", es['neutral']]
                 ]
 
+                emotion_string = ""
+
+                emotion_scores_list = sorted(emotion_scores_list1, key=itemgetter(1))
+
+                for i in emotion_scores_list:
+                    if i[1] > 10:
+                        emotion_string += str(i[0] + "(" + str(int(i[1])) + "%) " )
+
+                enew(emotion_string)
+
                 try:
-                   if result['dominant_emotion'] != prev_dom:
-                    with open('../frontend/my-app/src/fer.txt', 'a') as file:
-                        file.write( ",".join(emotion_scores_list) + "\n")
-                        prev_dom = result['dominant_emotion']
+                    with open('../frontend/my-app/src/fer.txt', 'w') as file:
+                        for i in emotion_list:
+                            file.write( str(i) + "\n")
                 except Exception as e:
                     print(e)
+
+                prev_dom = result['dominant_emotion']
             
             region = result['region']
             x, y, w, h = region['x'], region['y'], region['w'], region['h']
