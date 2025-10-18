@@ -1,12 +1,24 @@
+from abc import ABC, abstractmethod
+
 from starlette.websockets import WebSocket
 
 from api.card import Card
 
 
-class Player:
+class Player(ABC):
     def __init__(self, name: str) -> None:
         self.name = name
         self.hand: list[Card] = []
+        self.last_discard = []
+        self.cheated = False
+
+    @abstractmethod
+    async def play_turn(self) -> list[Card]:
+        pass
+
+    @abstractmethod
+    async def callout(self) -> bool:
+        pass
 
 
 class HumanPlayer(Player):
@@ -18,7 +30,33 @@ class HumanPlayer(Player):
     def ready_up(self) -> None:
         self.ready = True
 
+    async def play_turn(self) -> list[Card]:
+        while True:
+            try:
+                data = await self.websocket.receive_json()
+                discard: list[str] = data.get("discard")
+                self.last_discard = [Card.from_str(s) for s in discard]
+                return self.last_discard
+            except Exception as e:
+                print(e, f"try again, {self.name}")
+
+    async def callout(self) -> Player:
+        while True:
+            try:
+                data = await self.websocket.receive_json()
+                callout: bool = data.get("callout")
+                if callout:
+                    return self
+            except Exception as e:
+                print(e, f"try again, {self.name}")
+
 
 class BotPlayer(Player):
     def __init__(self) -> None:
         super().__init__("otis")
+
+    async def play_turn(self) -> list[Card]:
+        pass
+
+    async def callout(self) -> bool:
+        pass
