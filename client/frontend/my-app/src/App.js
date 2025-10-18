@@ -109,7 +109,7 @@ function JoinScreen({ onBack, enterGame }) {
 
 function GameScreen() {
   const playerHand = ["C1", "D8", "H11", "S3", "S1", "S13", "D2", "H7", "C5"];
-  const stackSize = 20;
+  const stackSize = 7;
 
   const [selectedCards, setSelectedCards] = useState([]);
 
@@ -178,22 +178,34 @@ function CardStack({ stackSize }) {
     -67, 0, 37, -20, 58, -35, -60, 39, -42, 11, 53, 70, 34, 27, -33, 31, -26,
     23, -59, 35, -70, 18, -19, 2, 48, 44, -25, -73, -15, -11,
   ];
+
+  const maxVisible = 4;
+
+  const startIndex =
+    stackSize <= maxVisible
+      ? 0
+      : (stackSize - maxVisible) % rotationOffset.length;
+
+  const visibleCards = Array.from({
+    length: Math.min(stackSize, maxVisible),
+  }).map((_, i) => {
+    const rotationIndex = (startIndex + i) % rotationOffset.length;
+    return rotationOffset[rotationIndex];
+  });
+
   return (
     <div className="Card-Stack" style={{ position: "relative" }}>
-      {[...Array(stackSize)].map((_, i) => {
-        const rotation = rotationOffset[i % rotationOffset.length];
-        return (
-          <img
-            key={i}
-            className="Back-Card"
-            src={backOfCard}
-            alt="card back"
-            style={{
-              "--card-rotation": `${rotation}deg`,
-            }}
-          />
-        );
-      })}
+      {visibleCards.map((rotation, i) => (
+        <img
+          key={i}
+          className="Back-Card"
+          src={backOfCard}
+          alt="card back"
+          style={{
+            "--card-rotation": `${rotation}deg`,
+          }}
+        />
+      ))}
     </div>
   );
 }
