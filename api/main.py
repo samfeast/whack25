@@ -12,7 +12,23 @@ cheat = Cheat()
 
 @app.get("/")
 async def root():
-    return HTMLResponse("<html><body>Hello World</body></html>")
+    return HTMLResponse(
+        """<html><body><input id="name"><button onClick="join()">join</button><button onClick="ready()">ready</button><script>
+    
+    let ws
+    
+    function join() {
+        let username = document.getElementById('name').value;
+        ws = new WebSocket("ws://localhost:8000/cheat");
+        ws.onopen = () => ws.send(username);
+        ws.onmessage = (e) => console.log(e.data);
+    }
+    
+    function ready() {
+        ws.send('maks');
+    }
+    </script></body></html>"""
+    )
 
 
 @app.websocket("/cheat")

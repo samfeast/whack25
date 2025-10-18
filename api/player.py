@@ -1,3 +1,4 @@
+import asyncio
 from abc import ABC, abstractmethod
 
 from starlette.websockets import WebSocket
@@ -59,4 +60,5 @@ class BotPlayer(Player):
         pass
 
     async def callout(self) -> bool:
-        pass
+        while True:
+            await asyncio.sleep(1)

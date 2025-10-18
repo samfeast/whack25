@@ -96,7 +96,14 @@ class Cheat:
         self.current_player.hand = list(
             set(self.current_player.hand) - set(discard_list)
         )
+        print(f"{self.current_player.name} discarded {len(discard_list)} cards")
         self.deck += discard_list
+        self.current_player.cheated = False
+        for card in discard_list:
+            if card.value != self.current_value:
+                self.current_player.cheated = True
+                break
+        self.increment_current_value()
 
         # print player povs
         for player in self.players:
@@ -110,7 +117,9 @@ class Cheat:
                 [
                     asyncio.create_task(self.current_player.play_turn()),
                 ]
-                + [p.callout() for p in self.current_other_players],
+                + [
+                    asyncio.create_task(p.callout()) for p in self.current_other_players
+                ],
                 return_when=asyncio.FIRST_COMPLETED,
             )
 
@@ -125,6 +134,7 @@ class Cheat:
                 self.current_player.hand = list(
                     set(self.current_player.hand) - set(discard_list)
                 )
+                print(f"{self.current_player.name} discarded {len(discard_list)} cards")
                 self.deck += discard_list
                 self.current_player.cheated = False
                 for card in discard_list:
