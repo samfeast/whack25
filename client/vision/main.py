@@ -6,14 +6,18 @@ import numpy as np
 import sys
 np.set_printoptions(threshold=sys.maxsize)
 
-
 import queue
 import sounddevice as sd
 import vosk
 import json
 
-emotions = np.empty((0, 8))
-words = []
+prev_dom = ""
+
+try:
+    with open('../frontend/my-app/src/fer.txt', '2') as file:
+        file.write("")
+except Exception as e:
+    print(e)
 
 def voice():
     model_path = "vosk-model-en-us-0.22"
@@ -58,7 +62,12 @@ def voice():
                     result = recognizer.Result()
                     result_dict = json.loads(result)
                     rec_text = result_dict.get('text', '')
-                    words.append([time.time(), rec_text])
+
+                    try:
+                        with open('../frontend/my-app/src/fer.txt', 'a') as file:
+                            file.write( str(time.time()) + "," + str(rec_text) + "\n")
+                    except Exception as e:
+                        print(e)
 
                 #else:
                 #    partial_result = recognizer.PartialResult()
@@ -140,19 +149,24 @@ while True:
                 es = result['emotion']
 
                 emotion_scores_list = [
-                    time.time(),
-                    es['angry'],
-                    es['disgust'],
-                    es['fear'],
-                    es['happy'],
-                    es['sad'],
-                    es['surprise'],
-                    es['neutral']
+                    str(time.time()),
+                    str(result['dominant_emotion']),
+                    str(es['angry']),
+                    str(es['disgust']),
+                    str(es['fear']),
+                    str(es['happy']),
+                    str(es['sad']),
+                    str(es['surprise']),
+                    str(es['neutral'])
                 ]
 
-                emotion_scores_array = np.array(emotion_scores_list)
-                esa = emotion_scores_array.reshape(1, -1)
-                emotions = np.concatenate((emotions, esa), axis=0)
+                try:
+                   if result['dominant_emotion'] != prev_dom:
+                    with open('../frontend/my-app/src/fer.txt', 'a') as file:
+                        file.write( ",".join(emotion_scores_list) + "\n")
+                        prev_dom = result['dominant_emotion']
+                except Exception as e:
+                    print(e)
             
             region = result['region']
             x, y, w, h = region['x'], region['y'], region['w'], region['h']
@@ -173,5 +187,4 @@ while True:
 
 cap.release()
 cv2.destroyAllWindows()
-print(emotions, words)
 print("Webcam closed and program terminated.")
