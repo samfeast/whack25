@@ -2,6 +2,7 @@ import "./App.css";
 import { useState } from "react";
 import cardMap from "./cardMap";
 import handBorder from "./assets/border.svg";
+import backOfCard from "./assets/back_of_card.svg";
 
 function App() {
   const [screen, setScreen] = useState("menu");
@@ -107,30 +108,39 @@ function JoinScreen({ onBack, enterGame }) {
 }
 
 function GameScreen() {
-  const playerHand = ["C1", "D8", "H12", "S5", "D11", "H3", "C10"];
-  const stackSize = 5;
+  const playerHand = ["C1", "D8", "H11", "S3", "S1", "S13", "D2", "H7", "C5"];
+  const stackSize = 20;
+
+  const [selectedCards, setSelectedCards] = useState([]);
+
+  const handleCardClick = (cardKey) => {
+    setSelectedCards((prev) =>
+      prev.includes(cardKey)
+        ? prev.filter((c) => c !== cardKey)
+        : [...prev, cardKey]
+    );
+  };
+
+  const handlePlaySelectedCards = () => {
+    alert(`Playing selected cards: ${selectedCards.join(", ")}`);
+  };
 
   return (
     <div className="Game-Screen">
-      <CardHand hand={playerHand} />
+      <CardHand
+        hand={playerHand}
+        selectedCards={selectedCards}
+        onCardClick={handleCardClick}
+      />
       <CardStack stackSize={stackSize} />
+      <ActionButton onPlaySelectedCards={handlePlaySelectedCards} />
     </div>
   );
 }
 
-function CardHand({ hand }) {
-  const [selectedCards, setSelectedCards] = useState([]);
+function CardHand({ hand, selectedCards, onCardClick }) {
   const handLength = hand.length;
-  const angleRange = hand.Length >= 6 ? 60 : 60 - (7 - handLength) * 10;
-
-  const handleCardClick = (cardKey) => {
-    setSelectedCards(
-      (prev) =>
-        prev.includes(cardKey)
-          ? prev.filter((c) => c !== cardKey) // unclick if already clicked
-          : [...prev, cardKey] // add if not clicked
-    );
-  };
+  const angleRange = Math.min(60, (handLength - 1) * 12);
 
   return (
     <div className="Card-Hand">
@@ -154,7 +164,7 @@ function CardHand({ hand }) {
               "--card-x": `${x}px`,
               "--card-y": `${y}px`,
             }}
-            onClick={() => handleCardClick(cardKey)}
+            onClick={() => onCardClick(cardKey)}
           />
         );
       })}
@@ -164,7 +174,78 @@ function CardHand({ hand }) {
 }
 
 function CardStack({ stackSize }) {
-  return <div className="Card-Stack"></div>;
+  const rotationOffset = [
+    -67, 0, 37, -20, 58, -35, -60, 39, -42, 11, 53, 70, 34, 27, -33, 31, -26,
+    23, -59, 35, -70, 18, -19, 2, 48, 44, -25, -73, -15, -11,
+  ];
+  return (
+    <div className="Card-Stack" style={{ position: "relative" }}>
+      {[...Array(stackSize)].map((_, i) => {
+        const rotation = rotationOffset[i % rotationOffset.length];
+        return (
+          <img
+            key={i}
+            className="Back-Card"
+            src={backOfCard}
+            alt="card back"
+            style={{
+              "--card-rotation": `${rotation}deg`,
+            }}
+          />
+        );
+      })}
+    </div>
+  );
+}
+
+function ActionButton({ onPlaySelectedCards }) {
+  const handleCallCheat = () => {
+    alert("Cheat called!");
+  };
+
+  return (
+    <div
+      style={{
+        display: "flex",
+        justifyContent: "flex-end",
+        flexDirection: "column",
+        alignItems: "flex-end",
+      }}
+    >
+      <button
+        className="Game-Button"
+        onClick={handleCallCheat}
+        style={{
+          marginTop: "20px",
+          marginRight: "20px",
+          width: "250px",
+          backgroundColor: "#7d0a14",
+          color: "white",
+          borderColor: "white",
+          borderWidth: "2px",
+          borderStyle: "solid",
+        }}
+      >
+        CALL CHEAT
+      </button>
+      <button
+        className="Game-Button"
+        onClick={onPlaySelectedCards}
+        style={{
+          marginTop: "20px",
+          marginRight: "20px",
+          width: "250px",
+          backgroundColor: "#0a477d",
+          color: "white",
+          borderColor: "white",
+          borderWidth: "2px",
+          borderStyle: "solid",
+        }}
+      >
+        PLAY SELECTED CARDS
+      </button>
+    </div>
+  );
 }
 
 function validateGameCode(gameCode) {
