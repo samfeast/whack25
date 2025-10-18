@@ -108,8 +108,10 @@ function JoinScreen({ onBack, enterGame }) {
 }
 
 function GameScreen() {
-  const playerHand = ["C1", "D8", "H11", "S3", "S1", "S13", "D2", "H7", "C5"];
-  const stackSize = 7;
+  const [playerHand, setPlayerHand] = useState(["D1", "H10", "C11", "S3"]);
+  const [stackSize, setStackSize] = useState(0);
+  const [ownTurn, setOwnTurn] = useState(true);
+  const [baseCard, setBaseCard] = useState("D5");
 
   const [selectedCards, setSelectedCards] = useState([]);
 
@@ -122,7 +124,16 @@ function GameScreen() {
   };
 
   const handlePlaySelectedCards = () => {
+    if (selectedCards.length === 0) {
+      alert("No cards selected!");
+      return;
+    }
     alert(`Playing selected cards: ${selectedCards.join(", ")}`);
+    setOwnTurn(false);
+    setStackSize((prev) => prev + selectedCards.length);
+    const selectedSet = new Set(selectedCards);
+    setPlayerHand((prev) => prev.filter((c) => !selectedSet.has(c)));
+    setSelectedCards([]);
   };
 
   return (
@@ -132,8 +143,11 @@ function GameScreen() {
         selectedCards={selectedCards}
         onCardClick={handleCardClick}
       />
-      <CardStack stackSize={stackSize} />
-      <ActionButton onPlaySelectedCards={handlePlaySelectedCards} />
+      <CardStack stackSize={stackSize} baseCard={baseCard} />
+      <ActionButton
+        onPlaySelectedCards={handlePlaySelectedCards}
+        ownTurn={ownTurn}
+      />
     </div>
   );
 }
@@ -147,12 +161,12 @@ function CardHand({ hand, selectedCards, onCardClick }) {
       {hand.map((cardKey, index) => {
         const isSelected = selectedCards.includes(cardKey);
         const circleRadius = isSelected ? 525 : 500;
-        const angle =
-          (Math.PI * (90 - angleRange / 2)) / 180 +
-          index * ((Math.PI * angleRange) / 180 / (handLength - 1));
-        const relativeAngle = -((angle - Math.PI / 2) * 180) / Math.PI;
-        const x = -75 + circleRadius * Math.cos(angle);
-        const y = 875 - circleRadius * Math.sin(angle);
+        const angleDeg =
+          handLength != 1
+            ? (180 - angleRange) / 2 + (index * angleRange) / (handLength - 1)
+            : 90;
+        const x = -75 + circleRadius * Math.cos((angleDeg * Math.PI) / 180);
+        const y = 875 - circleRadius * Math.sin((angleDeg * Math.PI) / 180);
         return (
           <img
             key={index}
@@ -160,7 +174,7 @@ function CardHand({ hand, selectedCards, onCardClick }) {
             alt={cardKey}
             className={isSelected ? "Card-Selected" : "Card"}
             style={{
-              "--card-rotation": `${relativeAngle}deg`,
+              "--card-rotation": `${90 - angleDeg}deg`,
               "--card-x": `${x}px`,
               "--card-y": `${y}px`,
             }}
@@ -173,7 +187,7 @@ function CardHand({ hand, selectedCards, onCardClick }) {
   );
 }
 
-function CardStack({ stackSize }) {
+function CardStack({ stackSize, baseCard }) {
   const rotationOffset = [
     -67, 0, 37, -20, 58, -35, -60, 39, -42, 11, 53, 70, 34, 27, -33, 31, -26,
     23, -59, 35, -70, 18, -19, 2, 48, 44, -25, -73, -15, -11,
@@ -194,11 +208,19 @@ function CardStack({ stackSize }) {
   });
 
   return (
-    <div className="Card-Stack" style={{ position: "relative" }}>
+    <div>
+      <img
+        className="Stack-Card"
+        src={cardMap[baseCard]}
+        alt="base card"
+        style={{
+          "--card-rotation": `0deg`,
+        }}
+      />
       {visibleCards.map((rotation, i) => (
         <img
           key={i}
-          className="Back-Card"
+          className="Stack-Card"
           src={backOfCard}
           alt="card back"
           style={{
@@ -210,7 +232,7 @@ function CardStack({ stackSize }) {
   );
 }
 
-function ActionButton({ onPlaySelectedCards }) {
+function ActionButton({ onPlaySelectedCards, ownTurn }) {
   const handleCallCheat = () => {
     alert("Cheat called!");
   };
@@ -242,12 +264,13 @@ function ActionButton({ onPlaySelectedCards }) {
       </button>
       <button
         className="Game-Button"
+        disabled={!ownTurn}
         onClick={onPlaySelectedCards}
         style={{
           marginTop: "20px",
           marginRight: "20px",
           width: "250px",
-          backgroundColor: "#0a477d",
+          backgroundColor: ownTurn ? "#0a477d" : "#585858",
           color: "white",
           borderColor: "white",
           borderWidth: "2px",
@@ -273,11 +296,6 @@ function makeGameCode(length) {
     result += characters.charAt(Math.floor(Math.random() * charactersLength));
   }
   return result;
-}
-
-function getHand() {
-  // hardcoded
-  return ["D1", "H10", "C11"];
 }
 
 export default App;
