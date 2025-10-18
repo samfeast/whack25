@@ -1,4 +1,5 @@
 from enum import Enum
+from typing import Any
 
 
 class Suit(Enum):
@@ -13,11 +14,23 @@ class Card:
         self.suit = suit
         self.value = value
 
+    @staticmethod
+    def from_str(s: str) -> "Card":
+        suit = Suit(s[0].upper())
+        value = int(s[1:])
+        return Card(suit, value)
+
     def __str__(self) -> str:
         return f"{self.suit.value}{self.value}"
 
     def __repr__(self) -> str:
-        return f"{self.suit.value}{self.value}"
+        return str(self)
+
+    def __eq__(self, other: Any) -> bool:
+        return str(self) == str(other)
+
+    def __hash__(self) -> int:
+        return hash(str(self))
 
 
 def generate_deck() -> list[Card]:
