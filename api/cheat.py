@@ -151,7 +151,7 @@ class Cheat:
 
                     # next player
                     self.increment_player()
-                else:
+                elif isinstance(result, Player):
                     print(f"{result.name} called {self.previous_player.name} a cheat")
                     if self.previous_player.cheated:
                         self.previous_player.hand += self.deck
@@ -160,13 +160,14 @@ class Cheat:
                     self.deck = []
                     self.current_value = 1
             else:
-                print(f"{result.name} called {self.previous_player.name} a cheat")
-                if self.previous_player.cheated:
-                    self.previous_player.hand += self.deck
-                else:
-                    result.hand += self.deck
-                self.deck = []
-                self.current_value = 1
+                if isinstance(result, Player):
+                    print(f"{result.name} called {self.previous_player.name} a cheat")
+                    if self.previous_player.cheated:
+                        self.previous_player.hand += self.deck
+                    else:
+                        result.hand += self.deck
+                    self.deck = []
+                    self.current_value = 1
 
             # print player povs
             for player in self.players:
