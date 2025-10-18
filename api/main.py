@@ -26,15 +26,16 @@ class Action(Enum):
 
 class Cheat:
     def __init__(self):
+        self.playing = False
         self.current_action = Action.JOIN
-        self.current_player = 0
+        self.current_player_index = 0
         self.players: dict[str, Player] = {}
 
     def join(self, player: Player):
         self.players[player.name] = player
 
     @property
-    def playing(self):
+    def all_ready(self):
         return len(self.players) != 0 and all(
             map(lambda p: p.ready, self.players.values())
         )
@@ -43,10 +44,19 @@ class Cheat:
         for player in self.players.values():
             await player.websocket.send_json(message)
 
+    @property
+    def current_player(self):
+        players = list(self.players.values())
+        return players[self.current_player_index]
+
+    def increment_player(self):
+        self.current_player_index += 1
+
     async def start(self):
-        if not self.playing:
+        if not self.all_ready:
             return
         print("starting")
+
         while True:
             await asyncio.sleep(1)
 
@@ -61,7 +71,7 @@ async def root():
 
 @app.websocket("/cheat")
 async def websocket_endpoint(websocket: WebSocket):
-    if cheat.playing:
+    if cheat.all_ready:
         print("already playing")
         return
 
@@ -82,6 +92,8 @@ async def websocket_endpoint(websocket: WebSocket):
         await cheat.start()
 
         while True:
-            await asyncio.sleep(1)
+            await asyncio.sleep(0.5)
+            if cheat.playing:
+                print(f"sending {player.name} the game data")
     except WebSocketDisconnect:
         print("Failed to join cheat")
