@@ -107,7 +107,7 @@ function JoinScreen({ onBack, enterGame }) {
 }
 
 function GameScreen() {
-  const playerHand = ["C1", "D8", "H12", "H4", "S11", "D3", "C10"];
+  const playerHand = ["C1", "D8", "H12", "S5", "D11", "H3", "C10"];
   const stackSize = 5;
 
   return (
@@ -121,7 +121,7 @@ function GameScreen() {
 function CardHand({ hand }) {
   const [selectedCards, setSelectedCards] = useState([]);
   const handLength = hand.length;
-  const angleRange = 60;
+  const angleRange = hand.Length >= 6 ? 60 : 60 - (7 - handLength) * 10;
 
   const handleCardClick = (cardKey) => {
     setSelectedCards(
