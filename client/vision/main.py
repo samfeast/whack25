@@ -22,7 +22,6 @@ def enew(new_emotion):
 
 def voice():
     model_path = "vosk-model-en-us-0.22"
-    words = ""
 
     try:
         model = vosk.Model(model_path)

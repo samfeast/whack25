@@ -5,6 +5,8 @@ from starlette.websockets import WebSocket
 
 from api.card import Card
 
+from gemini import analyze_bluff, move
+
 
 class Player(ABC):
     def __init__(self, name: str) -> None:
@@ -57,7 +59,7 @@ class BotPlayer(Player):
         super().__init__("otis")
 
     async def play_turn(self) -> list[Card]:
-        pass
+        move()
 
     async def callout(self) -> bool:
         while True:
