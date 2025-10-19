@@ -60,10 +60,6 @@ def get_move_schema() -> types.Schema:
     return types.Schema(
         type=types.Type.OBJECT,
         properties={
-            "SuggestedCardRank": types.Schema(
-                type=types.Type.STRING,
-                description="The rank of the card the AI should announce it's playing (e.g., 'A', '2', 'K').",
-            ),
             "CardsToPlay": types.Schema(
                 type=types.Type.ARRAY,
                 items=types.Schema(type=types.Type.STRING),
@@ -74,7 +70,7 @@ def get_move_schema() -> types.Schema:
                 description="A concise explanation (2-3 sentences) for the suggested move, considering bluffing potential and game strategy.",
             ),
         },
-        required=["SuggestedCardRank", "CardsToPlay", "Reasoning"],
+        required=["CardsToPlay", "Reasoning"],
     )
 
 
@@ -147,13 +143,15 @@ def generate_content_sdk(
 # --- Business Logic Functions (Simplified) ---
 
 
-def analyze_bluff(state: str, emotion_data: str) -> dict:
+def analyze_bluff(state: dict, emotion_data: str) -> dict:
     """
     Determines if an opponent is bluffing based on their move,
     the game state, and emotional data.
     """
     basic_query = (
-        f"Is this player bluffing? New Game State: {state} Emotion Data: {emotion_data}"
+        f"Last move: {state.get("log")}"
+        f"The previous player appears {emotion_data}. What is the best move to make right now? "
+        "Would you like to call out the player or wait on?"
     )
 
     system_prompt = (
@@ -176,16 +174,20 @@ def analyze_bluff(state: str, emotion_data: str) -> dict:
     return result
 
 
-def move(hand: list, state: str) -> dict:
+def move(state: dict) -> dict:
     """
     Suggests the best move (cards to play and rank to announce) for the AI.
     """
-    hand_str = ", ".join(hand)
+    hand = map(lambda c: str(c), state.pop("hand"))
+    hand = ", ".join(hand)
 
     basic_query = (
-        f"You are playing the card game Cheat, you'd like to win. Your hand is: {hand_str}. "
-        f"The current game state is: {state}. What is the best move to make right now? "
-        "What rank are you announcing, and what actual cards will you play from your hand. You can bluff."
+        f"Last move: {state.get("log")}"
+        f"Next discard: {state.get("waiting-for")}. "
+        f"Your hand is: {hand}. "
+        f"Next expected rank: {state.get('current_rank')}. "
+        f"What is the best move to make right now?"
+        "What cards would you like to play from your hand? You can bluff."
     )
 
     system_prompt = (
@@ -217,9 +219,12 @@ def move_or_callout(state: dict, emotion_data: str) -> dict:
     hand = ", ".join(hand)
 
     basic_query = (
-        f"You are playing the card game Cheat, you'd like to win. Your hand is: {hand}. "
-        f"The current game state is: {state}. The previous player appears {emotion_data}. What is the best move to make right now? "
-        "What rank are you announcing, and what actual cards will you play from your hand. You can bluff."
+        f"Last move: {state.get("log")}"
+        f"Next discard: {state.get("waiting-for")}. "
+        f"Your hand is: {hand}. "
+        f"Next expected rank: {state.get('current_rank')}. "
+        f"The previous player appears {emotion_data}. What is the best move to make right now? "
+        "Would you like to call out the last move or play from your hand? You can bluff."
     )
 
     system_prompt = (

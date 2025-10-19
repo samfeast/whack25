@@ -86,9 +86,7 @@ class BotPlayer(Player):
         self.pov_board_state = None
 
     async def play_turn(self) -> list[Card]:
-        response = move(
-            list(map(lambda c: str(c), self.hand)), json.dumps(self.pov_board_state)
-        )
+        response = move(self.pov_board_state)
         print(response)
         return [Card.from_str(c) for c in response.get("CardsToPlay")]
 
@@ -101,7 +99,7 @@ class BotPlayer(Player):
             return [Card.from_str(c) for c in response.get("cards_to_play")]
 
     async def callout(self) -> Player:
-        response = analyze_bluff(json.dumps(self.pov_board_state), "pretty neutral")
+        response = analyze_bluff(self.pov_board_state, "pretty neutral")
         print(response.get("Reasoning"))
         if response.get("Bluffing"):
             return self

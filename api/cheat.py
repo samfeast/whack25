@@ -14,6 +14,7 @@ class Cheat:
         self.players: list[Player] = []
         self.deck = generate_deck()
         self.current_value = 1
+        self.log = "Game started"
 
     @property
     def human_players(self) -> list[HumanPlayer]:
@@ -75,6 +76,7 @@ class Cheat:
             "waiting-for": self.current_player.name,
             "own-turn": self.current_player.name == player.name,
             "current_rank": self.current_value,
+            "log": self.log,
         }
 
     async def discard(self, discard_list: list[Card]) -> None:
@@ -88,6 +90,7 @@ class Cheat:
             if card.value != self.current_value:
                 self.current_player.cheated = True
                 break
+        self.log = f"{self.current_player.name} discarded {len(discard_list)} cards"
         self.increment_current_value()
         self.increment_player()
         await self.broadcast_povs()
@@ -95,11 +98,14 @@ class Cheat:
     async def callout(self, caller: Player) -> None:
         print(f"{caller.name} called {self.previous_player.name} a cheat")
         if self.previous_player.cheated:
+            correct = True
             self.previous_player.hand += self.deck
         else:
+            correct = False
             caller.hand += self.deck
         self.deck = []
         self.current_value = 1
+        self.log = f"{self.current_player.name} {"correctly" if correct else "incorrectly"} called {self.previous_player.name} a cheat"
         await self.broadcast_povs()
 
     def print_povs(self) -> None:
