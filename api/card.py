@@ -9,6 +9,47 @@ class Suit(Enum):
     SPADES = "S"
 
 
+class Rank:
+    def __init__(self, value: int):
+        self.value = value
+
+    def __int__(self) -> int:
+        return self.value
+
+    def __lt__(self, other):
+        return self.value < int(other)
+
+    def __gt__(self, other):
+        return self.value > int(other)
+
+    def __eq__(self, other):
+        return self.value == int(other)
+
+    def __repr__(self) -> str:
+        match self.value:
+            case 1:
+                return "A"
+            case 11:
+                return "J"
+            case 12:
+                return "Q"
+            case 13:
+                return "K"
+        return str(self.value)
+
+    def increment(self) -> None:
+        if self.value == 13:
+            self.value = 1
+        else:
+            self.value += 1
+
+    def decrement(self) -> None:
+        if self.value == 1:
+            self.value = 13
+        else:
+            self.value -= 1
+
+
 class Card:
     def __init__(self, suit: Suit, value: int) -> None:
         self.suit = suit
