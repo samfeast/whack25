@@ -1,8 +1,9 @@
 import asyncio
+import json
 import random
 from typing import Any
 
-from api.card import generate_deck
+from api.card import generate_deck, Card
 from api.player import Player, HumanPlayer, BotPlayer
 
 
@@ -30,6 +31,11 @@ class Cheat:
     async def broadcast(self, message: Any):
         for player in self.human_players:
             await player.websocket.send_json(message)
+
+    async def broadcast_povs(self) -> None:
+        # todo: ai player
+        for player in self.human_players:
+            await player.websocket.send_json(self.pov_data(player))
 
     @property
     def current_player(self):
@@ -64,31 +70,10 @@ class Cheat:
             },
             "waiting_for": self.current_player.name,
             "previous_turn": None,
+            "current_value": self.current_value,
         }
 
-    async def start(self):
-        if not self.all_ready:
-            return
-        print("starting")
-
-        # add bot
-        self.players.append(BotPlayer())
-
-        # create hands
-        random.shuffle(self.deck)
-        hand_size = len(self.deck) // len(self.players)
-        for player in self.players:
-            for i in range(hand_size):
-                player.hand.append(self.deck.pop())
-
-        self.playing = True
-
-        # print player povs
-        for player in self.players:
-            print(player.name, self.pov_data(player))
-
-        # await player discard
-        discard_list = await self.current_player.play_turn()
+    async def discard(self, discard_list: list[Card]) -> None:
         self.current_player.hand = list(
             set(self.current_player.hand) - set(discard_list)
         )
@@ -100,13 +85,43 @@ class Cheat:
                 self.current_player.cheated = True
                 break
         self.increment_current_value()
-
-        # print player povs
-        for player in self.players:
-            print(player.name, self.pov_data(player))
-
-        # next player
         self.increment_player()
+        await self.broadcast_povs()
+
+    async def callout(self, caller: Player) -> None:
+        print(f"{caller.name} called {self.previous_player.name} a cheat")
+        if self.previous_player.cheated:
+            self.previous_player.hand += self.deck
+        else:
+            caller.hand += self.deck
+        self.deck = []
+        self.current_value = 1
+        await self.broadcast_povs()
+
+    def print_povs(self) -> None:
+        for player in self.players:
+            print(player.name, json.dumps(self.pov_data(player), indent=4))
+
+    def create_hands(self) -> None:
+        random.shuffle(self.deck)
+        hand_size = len(self.deck) // len(self.players)
+        for player in self.players:
+            for i in range(hand_size):
+                player.hand.append(self.deck.pop())
+
+    async def start(self):
+        if not self.all_ready:
+            return
+        print("starting")
+
+        self.players.append(BotPlayer())
+        self.create_hands()
+        self.playing = True
+
+        # await first discard
+        discard_list = await self.current_player.play_turn()
+        await self.discard(discard_list)
+        self.print_povs()
 
         while True:
             done, pending = await asyncio.wait(
@@ -135,39 +150,12 @@ class Cheat:
             if finished is self.current_player.play_turn:
                 if isinstance(result, list):
                     discard_list = result
-                    self.current_player.hand = list(
-                        set(self.current_player.hand) - set(discard_list)
-                    )
-                    print(
-                        f"{self.current_player.name} discarded {len(discard_list)} cards"
-                    )
-                    self.deck += discard_list
-                    self.current_player.cheated = False
-                    for card in discard_list:
-                        if card.value != self.current_value:
-                            self.current_player.cheated = True
-                            break
-                    self.increment_current_value()
-
-                    # next player
-                    self.increment_player()
+                    await self.discard(discard_list)
                 elif isinstance(result, Player):
-                    print(f"{result.name} called {self.previous_player.name} a cheat")
-                    if self.previous_player.cheated:
-                        self.previous_player.hand += self.deck
-                    else:
-                        result.hand += self.deck
-                    self.deck = []
-                    self.current_value = 1
+                    await self.callout(result)
             else:
                 if isinstance(result, Player):
-                    print(f"{result.name} called {self.previous_player.name} a cheat")
-                    if self.previous_player.cheated:
-                        self.previous_player.hand += self.deck
-                    else:
-                        result.hand += self.deck
-                    self.deck = []
-                    self.current_value = 1
+                    await self.callout(result)
 
             # print player povs
             for player in self.players:
