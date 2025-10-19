@@ -143,3 +143,18 @@
   transform: translate(-60px, 0px) rotate(var(--card-rotation));
   top: 70px;
 }
+
+.Player-Display {
+  margin-top: 20px;
+  margin-left: 20px;
+  width: 300px;
+  color: white;
+  border-color: white;
+  border-width: 2px;
+  border-style: solid;
+  font-size: 16px;
+  padding: 2px 4px;
+  border-radius: 1000px;
+  font-family: "Calibri";
+  font-weight: 800;
+}
