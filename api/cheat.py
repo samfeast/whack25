@@ -21,6 +21,10 @@ class Cheat:
             filter(lambda player: isinstance(player, HumanPlayer), self.players)
         )
 
+    @property
+    def bot_players(self) -> list[BotPlayer]:
+        return list(filter(lambda player: isinstance(player, BotPlayer), self.players))
+
     def join(self, player: Player):
         self.players.append(player)
 
@@ -106,6 +110,8 @@ class Cheat:
         # todo: ai player
         for player in self.human_players:
             await player.websocket.send_json(self.pov_data(player))
+        for player in self.bot_players:
+            await player.update_pov(self.pov_data(player))
 
     def create_hands(self) -> None:
         random.shuffle(self.deck)

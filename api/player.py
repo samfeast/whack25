@@ -79,6 +79,7 @@ class HumanPlayer(Player):
 class BotPlayer(Player):
     def __init__(self) -> None:
         super().__init__("otis")
+        self.pov_board_state = None
 
     async def play_turn(self) -> list[Card]:
         while True:
@@ -91,3 +92,6 @@ class BotPlayer(Player):
     async def callout(self) -> bool:
         while True:
             await asyncio.sleep(1)
+
+    async def update_pov(self, pov) -> None:
+        self.pov_board_state = pov
