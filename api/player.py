@@ -6,7 +6,7 @@ from starlette.websockets import WebSocket
 
 from api.card import Card
 
-from gemini import analyze_bluff, move
+# from gemini import analyze_bluff, move
 
 
 class Player(ABC):
@@ -49,7 +49,6 @@ class HumanPlayer(Player):
             except Exception as e:
                 print(e, f"try again, {self.name}")
 
-    @abstractmethod
     async def play_turn_or_callout(self) -> list[Card] | Player:
         while True:
             try:
@@ -82,10 +81,12 @@ class BotPlayer(Player):
         super().__init__("otis")
 
     async def play_turn(self) -> list[Card]:
-        move()
+        while True:
+            await asyncio.sleep(1)
 
     async def play_turn_or_callout(self) -> list[Card] | Player:
-        pass
+        while True:
+            await asyncio.sleep(1)
 
     async def callout(self) -> bool:
         while True:

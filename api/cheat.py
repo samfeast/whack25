@@ -58,13 +58,12 @@ class Cheat:
     def pov_data(self, player: Player):
         return {
             "name": player.name,
-            "hand": player.hand,
+            "hand": list(map(lambda c: str(c), player.hand)),
             "players": {
                 p.name: {"hand": len(p.hand), "last_discard": len(p.last_discard)}
                 for p in list(filter(lambda _p: _p.name != player.name, self.players))
             },
             "waiting_for": self.current_player.name,
-            "previous_turn": None,
             "current_value": self.current_value,
         }
 
@@ -101,7 +100,6 @@ class Cheat:
         # todo: ai player
         for player in self.human_players:
             await player.websocket.send_json(self.pov_data(player))
-        self.print_povs()
 
     def create_hands(self) -> None:
         random.shuffle(self.deck)
@@ -118,6 +116,7 @@ class Cheat:
         self.players.append(BotPlayer())
         self.create_hands()
         self.playing = True
+        await self.broadcast_povs()
 
         # await first discard
         discard_list = await self.current_player.play_turn()
@@ -154,6 +153,12 @@ class Cheat:
                 elif isinstance(result, Player):
                     player = result
                     await self.callout(player)
+                    # await discard
+                    discard_list = await self.current_player.play_turn()
+                    await self.discard(discard_list)
             else:
                 result: Player
                 await self.callout(result)
+                # await discard
+                discard_list = await self.current_player.play_turn()
+                await self.discard(discard_list)

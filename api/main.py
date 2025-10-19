@@ -51,6 +51,7 @@ async def websocket_endpoint(websocket: WebSocket):
         await websocket.receive_text()
         player.ready_up()
         print(f"{player.name} ready")
+        await cheat.broadcast({"message": f"Player {name} ready."})
         asyncio.create_task(cheat.start())
 
         while True:
