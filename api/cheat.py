@@ -17,9 +17,7 @@ class Cheat:
 
     @property
     def human_players(self) -> list[HumanPlayer]:
-        return list(
-            filter(lambda player: isinstance(player, HumanPlayer), self.players)
-        )
+        return list(filter(lambda player: isinstance(player, HumanPlayer), self.players))
 
     @property
     def bot_players(self) -> list[BotPlayer]:
@@ -34,6 +32,7 @@ class Cheat:
 
     async def broadcast(self, message: Any):
         for player in self.human_players:
+            print(message)
             await player.websocket.send_json(message)
 
     @property
@@ -78,9 +77,7 @@ class Cheat:
         }
 
     async def discard(self, discard_list: list[Card]) -> None:
-        self.current_player.hand = list(
-            set(self.current_player.hand) - set(discard_list)
-        )
+        self.current_player.hand = list(set(self.current_player.hand) - set(discard_list))
         print(f"{self.current_player.name} discarded {len(discard_list)} cards")
         self.deck += discard_list
         self.current_player.cheated = False

@@ -1,7 +1,7 @@
 const WebSocket = require("ws");
-const wss = new WebSocket.Server({ port: 8080 });
+const wss = new WebSocket.Server({ port: 8000 });
 
-console.log("✅ Mock WebSocket server running on ws://localhost:8080");
+console.log("✅ Mock WebSocket server running on ws://localhost:8000/cheat");
 
 wss.on("connection", (ws, req) => {
   const clientAddress = req.socket.remoteAddress;

@@ -1,6 +1,6 @@
-sad(95%) 
-angry(13%) neutral(77%) 
-sad(11%) fear(28%) angry(57%) 
-sad(96%) 
-sad(11%) fear(28%) angry(57%) 
-
+angry(17%) suprise(18%) neutral(22%) fear(32%) 
+suprise(16%) neutral(70%) 
+angry(21%) fear(21%) sad(51%) 
+angry(10%) fear(12%) sad(33%) neutral(42%) 
+happy(12%) sad(87%) 
+when you when you're running the thing the folder you want to get from again you're running from source

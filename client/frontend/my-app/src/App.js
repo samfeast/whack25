@@ -104,6 +104,7 @@ function GameScreen() {
 
     const handleMessage = (event) => {
       const data = JSON.parse(event.data);
+      alert(`Server says: ${event.data}`);
 
       if (data.hand) setPlayerHand(data.hand);
       if (typeof data["stack-size"] === "number")
