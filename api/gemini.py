@@ -157,6 +157,7 @@ def analyze_bluff(move: str, state: str, emotion_data: str) -> dict:
         "Your name is Otis. You are playing the card game Cheat. It is your job to determine whether the "
         "player is bluffing or not. You will be given the player's move, the state of the game, "
         "and data on the player (Facial Emotion Recognition & voice-to-text). "
+        "The data is the last 5 facial expression readings, as percentage confidence in up to seven emotions, with the 6th line holding the latest recorded sentence of speech."
         "Base your decision on the game state and the player's emotional data and return a JSON object."
     )
 

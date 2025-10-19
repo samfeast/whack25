@@ -86,6 +86,7 @@ class BotPlayer(Player):
 
     async def play_turn_or_callout(self) -> list[Card] | Player:
         pass
+        analyze_bluff()
 
     async def callout(self) -> bool:
         while True:
