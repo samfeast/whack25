@@ -10,8 +10,26 @@ class Suit(Enum):
 
 
 class Rank:
-    def __init__(self, value: int):
-        self.value = value
+    def __init__(self, value: int | str):
+        if isinstance(value, int):
+            self.value = value
+        elif isinstance(value, str):
+            match value:
+                case "A":
+                    self.value = 1
+                case "J":
+                    self.value = 11
+                case "Q":
+                    self.value = 12
+                case "K":
+                    self.value = 13
+                case _:
+                    self.value = int(value)
+        else:
+            raise TypeError("Rank must be int or str")
+
+        if self.value < 1 or self.value > 13:
+            raise ValueError("Rank must be between 1 and 13")
 
     def __int__(self) -> int:
         return self.value
@@ -35,7 +53,8 @@ class Rank:
                 return "Q"
             case 13:
                 return "K"
-        return str(self.value)
+            case _:
+                return str(self.value)
 
     def increment(self) -> None:
         if self.value == 13:
