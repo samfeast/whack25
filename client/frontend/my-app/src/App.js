@@ -85,8 +85,12 @@ function GameScreen() {
       alert("No cards selected!");
       return;
     }
+    if (selectedRank === 0) {
+      alert("No rank selected!");
+      return;
+    }
     setLastRank(selectedRank);
-    setOwnTurn(true); // setOwnTurn(false); true for testing
+    setOwnTurn(false); // setOwnTurn(false); true for testing
     setStackSize((prev) => prev + selectedCards.length);
     const selectedSet = new Set(selectedCards);
     setPlayerHand((prev) => prev.filter((c) => !selectedSet.has(c)));
@@ -227,7 +231,7 @@ function ActionButton({
           backgroundColor: "#7d0a14",
         }}
       >
-        CALL CHEAT
+        CALL CHEAT!
       </button>
       <button
         className="Action-Button"
@@ -241,6 +245,7 @@ function ActionButton({
       </button>
       <select
         className="Action-Button"
+        disabled={!ownTurn}
         onChange={handleChange}
         style={{
           backgroundColor: ownTurn ? "#035752" : "#585858",

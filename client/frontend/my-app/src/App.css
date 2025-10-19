@@ -110,9 +110,8 @@
   z-index: -1;
   position: absolute;
   transform: translate(-50%, 140%) scale(1.2);
+  filter: drop-shadow(0px 8px 6px rgba(0, 0, 0, 0.6));
 }
-
-
 
 .Stack-Card {
   width: 120px;
