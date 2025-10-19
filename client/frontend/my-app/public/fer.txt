@@ -1,6 +1,6 @@
-neutral(96%) 
-neutral(33%) happy(63%) 
-neutral(99%) 
-fear(97%) 
-neutral(99%) 
-inspector inspects what the fuck
+sad(95%) 
+angry(13%) neutral(77%) 
+sad(11%) fear(28%) angry(57%) 
+sad(96%) 
+sad(11%) fear(28%) angry(57%) 
+
