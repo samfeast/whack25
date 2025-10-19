@@ -1,8 +1,9 @@
 import "./App.css";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import cardMap from "./cardMap";
 import handBorder from "./assets/border.svg";
 import backOfCard from "./assets/back_of_card.svg";
+import { useWebSocket, WebSocketProvider } from "./WSProvider";
 
 const rankMap = {
   1: "Ace",
@@ -26,14 +27,18 @@ function App() {
   return (
     <div className="App">
       <header className="App-header">
-        {screen === "menu" && <MenuScreen setScreen={setScreen} />}
-        {screen === "game" && <GameScreen />}
+        <WebSocketProvider>
+          {screen === "menu" && <MenuScreen setScreen={setScreen} />}
+          {screen === "game" && <GameScreen />}
+        </WebSocketProvider>
       </header>
     </div>
   );
 }
 
 function MenuScreen({ setScreen }) {
+  const ws = useWebSocket();
+
   const [name, setName] = useState("");
 
   const handleName = (type) => {
@@ -42,6 +47,8 @@ function MenuScreen({ setScreen }) {
       return;
     }
     if (type === "join") {
+      ws.current.send(name);
+      ws.current.send(name + " ready");
       setScreen("game");
       return;
     }
@@ -65,6 +72,24 @@ function MenuScreen({ setScreen }) {
 }
 
 function GameScreen() {
+  const ws = useWebSocket();
+
+  useEffect(() => {
+    if (!ws?.current) return;
+
+    const handleMessage = (event) => {
+      console.log("[Server → Client]", event.data);
+      alert("Message from server: " + event.data);
+      // Parse JSON to set player hand, stack size, turn status, etc.
+    };
+
+    ws.current.addEventListener("message", handleMessage);
+
+    return () => {
+      ws.current.removeEventListener("message", handleMessage);
+    };
+  }, [ws]);
+
   const [playerHand, setPlayerHand] = useState(["D1", "H10", "C11", "S3"]);
   const [stackSize, setStackSize] = useState(0);
   const [ownTurn, setOwnTurn] = useState(true);
