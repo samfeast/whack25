@@ -2,8 +2,8 @@ import asyncio
 import json
 from abc import ABC, abstractmethod
 from starlette.websockets import WebSocket
-from api.card import Card
-from api.gemini import analyze_bluff, move
+from card import Card
+from gemini import analyze_bluff, move
 
 
 class Player(ABC):

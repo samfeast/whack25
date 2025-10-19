@@ -3,8 +3,8 @@ import json
 import random
 from typing import Any
 
-from api.card import generate_deck, Card
-from api.player import Player, HumanPlayer, BotPlayer
+from card import generate_deck, Card
+from player import Player, HumanPlayer, BotPlayer
 
 
 class Cheat:
@@ -171,9 +171,9 @@ class Cheat:
                     # await discard
                     discard_list = await self.current_player.play_turn()
                     await self.discard(discard_list)
-            else:
-                result: Player
+            elif isinstance(result, Player):
                 await self.callout(result)
+                result: Player
                 # await discard
                 discard_list = await self.current_player.play_turn()
                 await self.discard(discard_list)
