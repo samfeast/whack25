@@ -65,7 +65,7 @@ def voice():
                     rec_text = result_dict.get('text', '')
                     emotion_list[5] = str(rec_text)
                     try:
-                        with open('../frontend/my-app/src/fer.txt', 'w') as file:
+                        with open('../frontend/my-app/public/fer.txt', 'w') as file:
                             for i in emotion_list:
                                 file.write( str(i) + "\n")
                     except Exception as e:
@@ -171,7 +171,7 @@ while True:
                 enew(emotion_string)
 
                 try:
-                    with open('../frontend/my-app/src/fer.txt', 'w') as file:
+                    with open('../frontend/my-app/public/fer.txt', 'w') as file:
                         for i in emotion_list:
                             file.write( str(i) + "\n")
                 except Exception as e:
