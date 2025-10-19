@@ -95,7 +95,6 @@ function GameScreen() {
   const [lastRank, setLastRank] = useState(0);
   const [playerInfo, setPlayerInfo] = useState([]);
 
-  const [selectedRank, setSelectedRank] = useState(0);
   const [selectedCards, setSelectedCards] = useState([]);
 
   const ws = useWebSocket();
@@ -104,8 +103,6 @@ function GameScreen() {
     if (!ws?.current) return;
 
     const handleMessage = (event) => {
-      console.log("[Server → Client]", event.data);
-
       const message = JSON.parse(event.data);
 
       switch (message.type) {
@@ -159,11 +156,8 @@ function GameScreen() {
       alert("No cards selected!");
       return;
     }
-    if (selectedRank === 0) {
-      alert("No rank selected!");
-      return;
-    }
-    setLastRank(selectedRank);
+
+    setLastRank((prev) => (prev + 1 > 13 ? 1 : prev + 1));
     setOwnTurn(false); // setOwnTurn(false); true for testing
     setStackSize((prev) => prev + selectedCards.length);
     const selectedSet = new Set(selectedCards);
@@ -172,7 +166,6 @@ function GameScreen() {
     ws.current.send(
       JSON.stringify({
         discard: selectedCards,
-        claimed_rank: selectedRank,
       })
     );
   };
@@ -188,7 +181,6 @@ function GameScreen() {
       <ActionButton
         onPlaySelectedCards={handlePlaySelectedCards}
         ownTurn={ownTurn}
-        setSelectedRank={setSelectedRank}
         lastRank={lastRank}
       />
       <PlayerDisplay playerInfo={playerInfo} />
@@ -273,12 +265,7 @@ function CardStack({ stackSize }) {
 }
 
 // The "Call Cheat" and "Play Selected Cards" buttons
-function ActionButton({
-  onPlaySelectedCards,
-  ownTurn,
-  setSelectedRank,
-  lastRank,
-}) {
+function ActionButton({ onPlaySelectedCards, ownTurn, lastRank }) {
   const ws = useWebSocket();
 
   const handleCallCheat = async () => {
@@ -290,19 +277,6 @@ function ActionButton({
     } catch (err) {
       console.error("Error reading file:", err);
     }
-  };
-
-  const options =
-    lastRank === 0
-      ? Object.keys(rankMap).map(Number)
-      : [
-          (lastRank - 1) % 13 === 0 ? 13 : (lastRank - 1) % 13,
-          lastRank,
-          (lastRank + 1) % 13 === 0 ? 13 : (lastRank + 1) % 13,
-        ];
-
-  const handleChange = (event) => {
-    setSelectedRank(Number(event.target.value));
   };
 
   return (
@@ -332,22 +306,6 @@ function ActionButton({
       >
         PLAY SELECTED CARDS
       </button>
-      <select
-        className="Action-Button"
-        disabled={!ownTurn}
-        onChange={handleChange}
-        style={{
-          backgroundColor: ownTurn ? "#035752" : "#585858",
-          textAlign: "center",
-        }}
-      >
-        <option value="">Select a rank</option>
-        {options.map((rank) => (
-          <option key={rank} value={rank}>
-            {"Claim to play " + rankMap[rank]}
-          </option>
-        ))}
-      </select>
     </div>
   );
 }
