@@ -1,12 +1,9 @@
 import asyncio
+import json
 from abc import ABC, abstractmethod
-from typing import Any, Coroutine
-
 from starlette.websockets import WebSocket
-
 from api.card import Card
-
-# from gemini import analyze_bluff, move
+from api.gemini import analyze_bluff, move
 
 
 class Player(ABC):
@@ -82,16 +79,18 @@ class BotPlayer(Player):
         self.pov_board_state = None
 
     async def play_turn(self) -> list[Card]:
-        while True:
-            await asyncio.sleep(1)
-        # move()
+        response = move(
+            list(map(lambda c: str(c), self.hand)), json.dumps(self.pov_board_state)
+        )
+        return [Card.from_str(c) for c in response.get("CardsToPlay")]
 
     async def play_turn_or_callout(self) -> list[Card] | Player:
-        while True:
-            await asyncio.sleep(1)
-        # analyze_bluff()
+        return await self.play_turn()
 
-    async def callout(self) -> bool:
+    async def callout(self) -> Player:
+        response = analyze_bluff(json.dumps(self.pov_board_state), "", "")
+        if response.get("Bluffing"):
+            return self
         while True:
             await asyncio.sleep(1)
 
