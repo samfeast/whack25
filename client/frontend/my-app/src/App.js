@@ -138,7 +138,7 @@ function GameScreen() {
       const response = await fetch(`/fer.txt?ts=${Date.now()}`);
       const text = await response.text();
 
-      ws.current.send(JSON.stringify({ callout: selectedCards, data: text }));
+      ws.current.send(JSON.stringify({ discard: selectedCards, data: text }));
     } catch (err) {
       console.error("Error reading file:", err);
     }

@@ -1,6 +1,6 @@
-sad(95%) 
-angry(13%) neutral(77%) 
-sad(11%) fear(28%) angry(57%) 
-sad(96%) 
-sad(11%) fear(28%) angry(57%) 
-
+sad(44%) neutral(45%) 
+neutral(32%) happy(67%) 
+sad(44%) neutral(45%) 
+neutral(32%) happy(67%) 
+sad(44%) neutral(45%) 
+the comments exactly the states of the just just let all the
