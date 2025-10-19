@@ -29,6 +29,7 @@ function App() {
       <header className="App-header">
         <WebSocketProvider>
           {screen === "menu" && <MenuScreen setScreen={setScreen} />}
+          {screen === "waiting" && <WaitingScreen setScreen={setScreen} />}
           {screen === "game" && <GameScreen />}
         </WebSocketProvider>
       </header>
@@ -46,10 +47,10 @@ function MenuScreen({ setScreen }) {
       alert("Please enter a name!");
       return;
     }
-    if (type === "join") {
+    if (type === "waiting") {
       ws.current.send(name);
       ws.current.send(name + " ready");
-      setScreen("game");
+      setScreen("waiting");
       return;
     }
   };
@@ -64,14 +65,38 @@ function MenuScreen({ setScreen }) {
         className="Name-Box"
         maxLength={12}
       />
-      <button className="Join-Button" onClick={() => handleName("join")}>
+      <button className="Join-Button" onClick={() => handleName("waiting")}>
         JOIN GAME
       </button>
     </>
   );
 }
 
+function WaitingScreen({ setScreen }) {
+  const ws = useWebSocket();
+
+  const handleReady = (type) => {
+    if (type === "game") {
+      ws.current.send("ready");
+      setScreen("game");
+      return;
+    }
+  };
+
+  return (
+    <button className="Ready-Button" onClick={() => handleReady("game")}>
+      Ready?
+    </button>
+  );
+}
 function GameScreen() {
+  const [playerHand, setPlayerHand] = useState([]);
+  const [stackSize, setStackSize] = useState(0);
+  const [ownTurn, setOwnTurn] = useState(false);
+  const [selectedCards, setSelectedCards] = useState([]);
+  const [lastRank, setLastRank] = useState(0);
+  const [selectedRank, setSelectedRank] = useState(0);
+
   const ws = useWebSocket();
 
   useEffect(() => {
@@ -79,7 +104,7 @@ function GameScreen() {
 
     const handleMessage = (event) => {
       console.log("[Server → Client]", event.data);
-      alert("Message from server: " + event.data);
+      //alert("Message from server: " + event.data);
       // Parse JSON to set player hand, stack size, turn status, etc.
     };
 
@@ -89,13 +114,6 @@ function GameScreen() {
       ws.current.removeEventListener("message", handleMessage);
     };
   }, [ws]);
-
-  const [playerHand, setPlayerHand] = useState(["D1", "H10", "C11", "S3"]);
-  const [stackSize, setStackSize] = useState(0);
-  const [ownTurn, setOwnTurn] = useState(true);
-  const [selectedCards, setSelectedCards] = useState([]);
-  const [lastRank, setLastRank] = useState(0);
-  const [selectedRank, setSelectedRank] = useState(0);
 
   const handleCardClick = (cardKey) => {
     setSelectedCards((prev) =>
@@ -120,6 +138,12 @@ function GameScreen() {
     const selectedSet = new Set(selectedCards);
     setPlayerHand((prev) => prev.filter((c) => !selectedSet.has(c)));
     setSelectedCards([]);
+    ws.current.send(
+      JSON.stringify({
+        discard: selectedCards,
+        claimed_rank: selectedRank,
+      })
+    );
   };
 
   return (
@@ -223,9 +247,17 @@ function ActionButton({
   setSelectedRank,
   lastRank,
 }) {
-  const handleCallCheat = () => {
-    alert("Cheat called!");
-    // Access fer.txt and send to WS
+  const ws = useWebSocket();
+
+  const handleCallCheat = async () => {
+    try {
+      const response = await fetch("/fer.txt");
+      const text = await response.text();
+
+      ws.current.send(JSON.stringify({ callout: true, data: text }));
+    } catch (err) {
+      console.error("Error reading file:", err);
+    }
   };
 
   const options =

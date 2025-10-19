@@ -46,6 +46,29 @@
   transform: scale(1.05);
 }
 
+.Ready-Button {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 20px;
+  margin-top: 20px;
+  font-size: 36px;
+  padding: 12px 30px;
+  border-radius: 1000px;
+  border: solid 2px #000000;
+  cursor: pointer;
+  background-color: rgb(16, 198, 16);
+  color: #000000;
+  transition: background-color 0.2s ease, transform 0.2s ease;
+  font-family: "Calibri";
+  font-weight: 800;
+}
+
+.Ready-Button:hover {
+  background-color: rgb(16, 198, 16);
+  transform: scale(1.05);
+}
+
 .Action-Button {
   margin-top: 20px;
   margin-right: 20px;
