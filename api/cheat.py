@@ -62,7 +62,7 @@ class Cheat:
     def pov_data(self, player: Player):
         return {
             "name": player.name,
-            "hand": list(map(lambda c: str(c), player.hand)),
+            "hand": list(map(lambda c: str(c), sorted(player.hand))),
             "stack-size": len(self.deck),
             "player_info": [
                 {
@@ -78,23 +78,11 @@ class Cheat:
             "log": list(map(lambda a: repr(a), self.log)),
         }
 
-    async def discard(self, discard_list: list[Card]) -> None:
-        self.current_player.hand = list(
-            set(self.current_player.hand) - set(discard_list)
-        )
-        print(f"{self.current_player.name} discarded {len(discard_list)} cards")
-        self.deck += discard_list
-        self.current_player.cheated = False
+    async def discard(self, player: Player, discard_list: list[Card]) -> None:
         for card in discard_list:
-            if card.rank != self.current_rank:
-                self.current_player.cheated = True
-                break
-        if len(discard_list) == 0:
-            self.log.append(Pass(self.current_player))
-        else:
-            self.log.append(
-                Discard(self.current_player, discard_list, self.current_rank)
-            )
+            player.hand.remove(card)
+        self.deck += discard_list
+        self.log.append(Discard(self.current_player, discard_list, self.current_rank))
         self.current_rank.increment()
         self.increment_player()
         await self.broadcast_povs()

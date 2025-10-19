@@ -3,10 +3,10 @@ from typing import Any
 
 
 class Suit(Enum):
-    SPADES = "S"
     DIAMONDS = "D"
     CLUBS = "C"
     HEARTS = "H"
+    SPADES = "S"
 
 
 class Rank:
@@ -24,9 +24,6 @@ class Rank:
 
     def __lt__(self, other):
         return self.value < int(other)
-
-    def __gt__(self, other):
-        return self.value > int(other)
 
     def __eq__(self, other):
         return self.value == int(other)
@@ -78,3 +75,15 @@ class Card:
 
     def __hash__(self) -> int:
         return hash(str(self))
+
+    def __lt__(self, other: Any) -> bool:
+        if not isinstance(other, Card):
+            raise TypeError(
+                f"'<' not supported between instances of 'Card' and '{type(other).__name__}'"
+            )
+
+        if str(self.suit) < str(other.suit):
+            return True
+        elif str(self.suit) > str(other.suit):
+            return False
+        return self.rank < other.rank
