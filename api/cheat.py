@@ -158,7 +158,7 @@ class Cheat:
             finished = done.pop()
             result = await finished
 
-            if finished is self.current_player.play_turn_or_callout():
+            if finished is self.current_player.play_turn_or_callout:
                 if isinstance(result, list):
                     discard_list = result
                     await self.discard(discard_list)
