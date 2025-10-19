@@ -2,7 +2,7 @@ import asyncio
 import json
 import random
 from typing import Any
-from api.action import Action
+from api.action import Action, Discard, CallBluff, Pass
 from api.card import Card, Rank
 from api.bot_player import BotPlayer
 from api.human_player import HumanPlayer
@@ -31,6 +31,9 @@ class Cheat:
     def join(self, player: Player):
         self.players.append(player)
 
+    def last_action(self) -> Action:
+        return self.log[-1]
+
     @property
     def all_ready(self):
         return len(self.players) != 0 and all(map(lambda p: p.ready, self.players))
@@ -56,12 +59,6 @@ class Cheat:
         self.current_player_index += 1
         self.current_player_index %= len(self.players)
 
-    def increment_current_value(self):
-        if self.current_rank == 13:
-            self.current_rank = 1
-        else:
-            self.current_rank += 1
-
     def pov_data(self, player: Player):
         return {
             "name": player.name,
@@ -78,7 +75,7 @@ class Cheat:
             "waiting-for": self.current_player.name,
             "own-turn": self.current_player.name == player.name,
             "current_rank": self.current_rank,
-            "log": self.log,
+            "log": list(map(lambda a: repr(a), self.log)),
         }
 
     async def discard(self, discard_list: list[Card]) -> None:
@@ -92,22 +89,27 @@ class Cheat:
             if card.rank != self.current_rank:
                 self.current_player.cheated = True
                 break
-        self.log = f"{self.current_player.name} discarded {len(discard_list)} cards"
-        self.increment_current_value()
+        if len(discard_list) == 0:
+            self.log.append(Pass(self.current_player))
+        else:
+            self.log.append(
+                Discard(self.current_player, discard_list, self.current_rank)
+            )
+        self.current_rank.increment()
         self.increment_player()
         await self.broadcast_povs()
 
-    async def callout(self, caller: Player) -> None:
-        print(f"{caller.name} called {self.previous_player.name} a cheat")
-        if self.previous_player.cheated:
-            correct = True
-            self.previous_player.hand += self.deck
+    async def call_bluff(self, challenger: Player, action: Discard) -> None:
+        bluffer = action.player
+        cheated = not action.is_valid()
+        if cheated:
+            bluffer.hand += self.deck
         else:
-            correct = False
-            caller.hand += self.deck
+            challenger.hand += self.deck
+
         self.deck = []
-        self.current_rank = 1
-        self.log = f"{self.current_player.name} {"correctly" if correct else "incorrectly"} called {self.previous_player.name} a cheat"
+        self.current_rank = Rank(1)
+        self.log.append(CallBluff(challenger, action.player, cheated))
         await self.broadcast_povs()
 
     def print_povs(self) -> None:
@@ -147,7 +149,7 @@ class Cheat:
         while True:
             tasks = []
 
-            if len(self.deck) == 0:
+            if isinstance(self.last_action(), CallBluff):
                 tasks.append(self.current_player.play_turn())
             else:
                 tasks.append(self.current_player.play_turn_or_callout())
@@ -174,6 +176,6 @@ class Cheat:
                 await self.discard(discard_list)
             elif isinstance(result, Player):
                 player = result
-                await self.callout(player)
+                await self.call_bluff(player)
                 discard_list = await self.current_player.play_turn()
                 await self.discard(discard_list)

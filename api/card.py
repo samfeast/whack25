@@ -3,10 +3,10 @@ from typing import Any
 
 
 class Suit(Enum):
-    CLUBS = "C"
-    DIAMONDS = "D"
-    HEARTS = "H"
     SPADES = "S"
+    DIAMONDS = "D"
+    CLUBS = "C"
+    HEARTS = "H"
 
 
 class Rank:

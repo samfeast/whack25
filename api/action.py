@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from api.card import Card
+from api.card import Card, Rank
 from api.player import Player
 
 
@@ -18,13 +18,16 @@ class Pass(Action):
 
 
 class Discard(Action):
-    def __init__(self, player: Player, cards: list[Card], claimed_rank: int) -> None:
+    def __init__(self, player: Player, cards: list[Card], claimed_rank: Rank) -> None:
         self.player = player
         self.cards = cards
         self.claimed_rank = claimed_rank
 
     def __repr__(self) -> str:
-        return f"{self.player.name} discarded {len(self.cards)} '{self.claimed_rank}'s."
+        return f"{self.player.name} discarded {len(self.cards)} '{repr(self.claimed_rank)}'s."
+
+    def is_valid(self) -> bool:
+        return all(self.claimed_rank == card.rank for card in self.cards)
 
 
 class CallBluff(Action):
