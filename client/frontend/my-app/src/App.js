@@ -4,6 +4,22 @@ import cardMap from "./cardMap";
 import handBorder from "./assets/border.svg";
 import backOfCard from "./assets/back_of_card.svg";
 
+const rankMap = {
+  1: "Ace",
+  2: "2",
+  3: "3",
+  4: "4",
+  5: "5",
+  6: "6",
+  7: "7",
+  8: "8",
+  9: "9",
+  10: "10",
+  11: "Jack",
+  12: "Queen",
+  13: "King",
+};
+
 function App() {
   const [screen, setScreen] = useState("menu");
 
@@ -53,6 +69,8 @@ function GameScreen() {
   const [stackSize, setStackSize] = useState(0);
   const [ownTurn, setOwnTurn] = useState(true);
   const [selectedCards, setSelectedCards] = useState([]);
+  const [lastRank, setLastRank] = useState(0);
+  const [selectedRank, setSelectedRank] = useState(0);
 
   const handleCardClick = (cardKey) => {
     setSelectedCards((prev) =>
@@ -67,6 +85,7 @@ function GameScreen() {
       alert("No cards selected!");
       return;
     }
+    setLastRank(selectedRank);
     setOwnTurn(true); // setOwnTurn(false); true for testing
     setStackSize((prev) => prev + selectedCards.length);
     const selectedSet = new Set(selectedCards);
@@ -85,6 +104,8 @@ function GameScreen() {
       <ActionButton
         onPlaySelectedCards={handlePlaySelectedCards}
         ownTurn={ownTurn}
+        setSelectedRank={setSelectedRank}
+        lastRank={lastRank}
       />
     </div>
   );
@@ -167,10 +188,28 @@ function CardStack({ stackSize }) {
 }
 
 // The "Call Cheat" and "Play Selected Cards" buttons
-function ActionButton({ onPlaySelectedCards, ownTurn }) {
+function ActionButton({
+  onPlaySelectedCards,
+  ownTurn,
+  setSelectedRank,
+  lastRank,
+}) {
   const handleCallCheat = () => {
     alert("Cheat called!");
     // Access fer.txt and send to WS
+  };
+
+  const options =
+    lastRank === 0
+      ? Object.keys(rankMap).map(Number)
+      : [
+          (lastRank - 1) % 13 === 0 ? 13 : (lastRank - 1) % 13,
+          lastRank,
+          (lastRank + 1) % 13 === 0 ? 13 : (lastRank + 1) % 13,
+        ];
+
+  const handleChange = (event) => {
+    setSelectedRank(Number(event.target.value));
   };
 
   return (
@@ -200,6 +239,21 @@ function ActionButton({ onPlaySelectedCards, ownTurn }) {
       >
         PLAY SELECTED CARDS
       </button>
+      <select
+        className="Action-Button"
+        onChange={handleChange}
+        style={{
+          backgroundColor: ownTurn ? "#035752" : "#585858",
+          textAlign: "center",
+        }}
+      >
+        <option value="">Select a rank</option>
+        {options.map((rank) => (
+          <option key={rank} value={rank}>
+            {"Claim to play " + rankMap[rank]}
+          </option>
+        ))}
+      </select>
     </div>
   );
 }
