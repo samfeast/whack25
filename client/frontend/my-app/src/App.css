@@ -17,7 +17,7 @@
   background-color: #cccccc;
   font-size: 24px;
   color: #00061f;
-  font-family: "Calibri";
+  font-family: "Calibri", sans-serif;
   font-weight: 800;
   padding: 10px;
   margin: 20px
@@ -37,7 +37,7 @@
   background-color: #eeeeee;
   color: #000000;
   transition: background-color 0.2s ease, transform 0.2s ease;
-  font-family: "Calibri";
+  font-family: "Calibri", sans-serif;
   font-weight: 800;
 }
 
@@ -60,7 +60,7 @@
   background-color: rgb(16, 198, 16);
   color: #000000;
   transition: background-color 0.2s ease, transform 0.2s ease;
-  font-family: "Calibri";
+  font-family: "Calibri", sans-serif;
   font-weight: 800;
 }
 
@@ -81,7 +81,7 @@
   padding: 12px 30px;
   border-radius: 1000px;
   cursor: pointer;
-  font-family: "Calibri";
+  font-family: "Calibri", sans-serif;
   font-weight: 800;
 }
 
@@ -155,6 +155,6 @@
   font-size: 16px;
   padding: 2px 4px;
   border-radius: 1000px;
-  font-family: "Calibri";
+  font-family: "Calibri", sans-serif;
   font-weight: 800;
 }
