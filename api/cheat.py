@@ -44,10 +44,6 @@ class Cheat:
     def previous_player(self) -> Player:
         return self.players[self.previous_player_index]
 
-    @property
-    def current_other_players(self) -> list[Player]:
-        return list(filter(lambda p: p.name != self.current_player.name, self.players))
-
     def increment_player(self):
         self.current_player_index += 1
         self.current_player_index %= len(self.players)
@@ -118,7 +114,14 @@ class Cheat:
                     asyncio.create_task(self.current_player.play_turn()),
                 ]
                 + [
-                    asyncio.create_task(p.callout()) for p in self.current_other_players
+                    asyncio.create_task(p.callout())
+                    for p in list(
+                        filter(
+                            lambda p: p.name != self.previous_player.name
+                            and p.name != self.current_player.name,
+                            self.players,
+                        )
+                    )
                 ],
                 return_when=asyncio.FIRST_COMPLETED,
             )
@@ -130,29 +133,41 @@ class Cheat:
             result = await finished
 
             if finished is self.current_player.play_turn:
-                discard_list = result
-                self.current_player.hand = list(
-                    set(self.current_player.hand) - set(discard_list)
-                )
-                print(f"{self.current_player.name} discarded {len(discard_list)} cards")
-                self.deck += discard_list
-                self.current_player.cheated = False
-                for card in discard_list:
-                    if card.value != self.current_value:
-                        self.current_player.cheated = True
-                        break
-                self.increment_current_value()
+                if isinstance(result, list):
+                    discard_list = result
+                    self.current_player.hand = list(
+                        set(self.current_player.hand) - set(discard_list)
+                    )
+                    print(
+                        f"{self.current_player.name} discarded {len(discard_list)} cards"
+                    )
+                    self.deck += discard_list
+                    self.current_player.cheated = False
+                    for card in discard_list:
+                        if card.value != self.current_value:
+                            self.current_player.cheated = True
+                            break
+                    self.increment_current_value()
 
-                # next player
-                self.increment_player()
+                    # next player
+                    self.increment_player()
+                elif isinstance(result, Player):
+                    print(f"{result.name} called {self.previous_player.name} a cheat")
+                    if self.previous_player.cheated:
+                        self.previous_player.hand += self.deck
+                    else:
+                        result.hand += self.deck
+                    self.deck = []
+                    self.current_value = 1
             else:
-                print(f"{result.name} called {self.previous_player.name} a cheat")
-                if self.previous_player.cheated:
-                    self.previous_player.hand += self.deck
-                else:
-                    result.hand += self.deck
-                self.deck = []
-                self.current_value = 1
+                if isinstance(result, Player):
+                    print(f"{result.name} called {self.previous_player.name} a cheat")
+                    if self.previous_player.cheated:
+                        self.previous_player.hand += self.deck
+                    else:
+                        result.hand += self.deck
+                    self.deck = []
+                    self.current_value = 1
 
             # print player povs
             for player in self.players:

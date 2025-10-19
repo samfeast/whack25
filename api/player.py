@@ -1,5 +1,6 @@
 import asyncio
 from abc import ABC, abstractmethod
+from typing import Any, Coroutine
 
 from starlette.websockets import WebSocket
 
@@ -33,13 +34,18 @@ class HumanPlayer(Player):
     def ready_up(self) -> None:
         self.ready = True
 
-    async def play_turn(self) -> list[Card]:
+    async def play_turn(self) -> Player | list[Card]:
         while True:
             try:
                 data = await self.websocket.receive_json()
-                discard: list[str] = data.get("discard")
-                self.last_discard = [Card.from_str(s) for s in discard]
-                return self.last_discard
+                if "discard" in data:
+                    discard: list[str] = data.get("discard")
+                    self.last_discard = [Card.from_str(s) for s in discard]
+                    return self.last_discard
+                else:
+                    callout: bool = data.get("callout")
+                    if callout:
+                        return self
             except Exception as e:
                 print(e, f"try again, {self.name}")
 
