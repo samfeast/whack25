@@ -161,11 +161,9 @@ class Cheat:
             result = await finished
 
             if isinstance(result, list):
-                print("discard")
                 discard_list = result
                 await self.discard(discard_list)
             elif isinstance(result, Player):
-                print("callout")
                 player = result
                 await self.callout(player)
                 # await discard
