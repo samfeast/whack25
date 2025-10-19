@@ -84,10 +84,12 @@ class BotPlayer(Player):
     async def play_turn(self) -> list[Card]:
         while True:
             await asyncio.sleep(1)
+        # move()
 
     async def play_turn_or_callout(self) -> list[Card] | Player:
         while True:
             await asyncio.sleep(1)
+        # analyze_bluff()
 
     async def callout(self) -> bool:
         while True:

@@ -49,7 +49,6 @@ function MenuScreen({ setScreen }) {
     }
     if (type === "waiting") {
       ws.current.send(name);
-      ws.current.send(name + " ready");
       setScreen("waiting");
       return;
     }
@@ -93,9 +92,10 @@ function GameScreen() {
   const [playerHand, setPlayerHand] = useState([]);
   const [stackSize, setStackSize] = useState(0);
   const [ownTurn, setOwnTurn] = useState(false);
-  const [selectedCards, setSelectedCards] = useState([]);
   const [lastRank, setLastRank] = useState(0);
-  const [selectedRank, setSelectedRank] = useState(0);
+  const [playerInfo, setPlayerInfo] = useState([]);
+
+  const [selectedCards, setSelectedCards] = useState([]);
 
   const ws = useWebSocket();
 
@@ -103,9 +103,37 @@ function GameScreen() {
     if (!ws?.current) return;
 
     const handleMessage = (event) => {
-      console.log("[Server → Client]", event.data);
-      //alert("Message from server: " + event.data);
-      // Parse JSON to set player hand, stack size, turn status, etc.
+      const message = JSON.parse(event.data);
+
+      switch (message.type) {
+        case "hand":
+          // Example: { type: "hand", data: ["C2", "S9", "D13"] }
+          setPlayerHand(message.data);
+          break;
+
+        case "stack-size":
+          // Example: { type: "stack-size", data: 11 }
+          setStackSize(message.data);
+          break;
+
+        case "last-rank":
+          // Example: { type: "last-rank", data: 4 }
+          setLastRank(message.data);
+          break;
+
+        case "own-turn":
+          // Example: { type: "own-turn", data: true }
+          setOwnTurn(message.data);
+          break;
+
+        case "player-info":
+          // Example: { type: "player-info", data: [ { name: "Alice", cards: 5, message: "..." }, ... ] }
+          setPlayerInfo(message.data);
+          break;
+
+        default:
+          console.warn("Unknown message type:", message.type);
+      }
     };
 
     ws.current.addEventListener("message", handleMessage);
@@ -128,11 +156,8 @@ function GameScreen() {
       alert("No cards selected!");
       return;
     }
-    if (selectedRank === 0) {
-      alert("No rank selected!");
-      return;
-    }
-    setLastRank(selectedRank);
+
+    setLastRank((prev) => (prev + 1 > 13 ? 1 : prev + 1));
     setOwnTurn(false); // setOwnTurn(false); true for testing
     setStackSize((prev) => prev + selectedCards.length);
     const selectedSet = new Set(selectedCards);
@@ -141,7 +166,6 @@ function GameScreen() {
     ws.current.send(
       JSON.stringify({
         discard: selectedCards,
-        claimed_rank: selectedRank,
       })
     );
   };
@@ -157,9 +181,9 @@ function GameScreen() {
       <ActionButton
         onPlaySelectedCards={handlePlaySelectedCards}
         ownTurn={ownTurn}
-        setSelectedRank={setSelectedRank}
         lastRank={lastRank}
       />
+      <PlayerDisplay playerInfo={playerInfo} />
     </div>
   );
 }
@@ -241,12 +265,7 @@ function CardStack({ stackSize }) {
 }
 
 // The "Call Cheat" and "Play Selected Cards" buttons
-function ActionButton({
-  onPlaySelectedCards,
-  ownTurn,
-  setSelectedRank,
-  lastRank,
-}) {
+function ActionButton({ onPlaySelectedCards, ownTurn, lastRank }) {
   const ws = useWebSocket();
 
   const handleCallCheat = async () => {
@@ -258,19 +277,6 @@ function ActionButton({
     } catch (err) {
       console.error("Error reading file:", err);
     }
-  };
-
-  const options =
-    lastRank === 0
-      ? Object.keys(rankMap).map(Number)
-      : [
-          (lastRank - 1) % 13 === 0 ? 13 : (lastRank - 1) % 13,
-          lastRank,
-          (lastRank + 1) % 13 === 0 ? 13 : (lastRank + 1) % 13,
-        ];
-
-  const handleChange = (event) => {
-    setSelectedRank(Number(event.target.value));
   };
 
   return (
@@ -300,22 +306,26 @@ function ActionButton({
       >
         PLAY SELECTED CARDS
       </button>
-      <select
-        className="Action-Button"
-        disabled={!ownTurn}
-        onChange={handleChange}
-        style={{
-          backgroundColor: ownTurn ? "#035752" : "#585858",
-          textAlign: "center",
-        }}
-      >
-        <option value="">Select a rank</option>
-        {options.map((rank) => (
-          <option key={rank} value={rank}>
-            {"Claim to play " + rankMap[rank]}
-          </option>
-        ))}
-      </select>
+    </div>
+  );
+}
+
+function PlayerDisplay({ playerInfo }) {
+  return (
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "flex-start",
+      }}
+    >
+      {playerInfo.map((player, index) => (
+        <div key={index} className="Player-Display">
+          <p>
+            {player.name}: {player.cards} cards. {player.message}
+          </p>
+        </div>
+      ))}
     </div>
   );
 }
