@@ -17,10 +17,10 @@ try:
     API_KEY = os.getenv("OTIS")
     if API_KEY:
         os.environ["GEMINI_API_KEY"] = API_KEY
-    
+
     # 2. Initialize the client (handles authentication, URL, etc.)
     client = genai.Client()
-    
+
 except Exception as e:
     print(f"Error initializing Gemini client: {e}")
     client = None
@@ -31,9 +31,10 @@ MODEL_NAME = "gemini-2.5-flash"
 
 # --- Schemas (Using types.Schema for the SDK) ---
 
+
 def get_cheat_analysis_schema() -> types.Schema:
     """
-    Defines the structured output schema for the Cheat game analysis 
+    Defines the structured output schema for the Cheat game analysis
     (bluff detection).
     """
     return types.Schema(
@@ -41,14 +42,14 @@ def get_cheat_analysis_schema() -> types.Schema:
         properties={
             "Bluffing": types.Schema(
                 type=types.Type.BOOLEAN,
-                description="True if the player is likely bluffing, False otherwise."
+                description="True if the player is likely bluffing, False otherwise.",
             ),
             "Reasoning": types.Schema(
                 type=types.Type.STRING,
-                description="A 3-sentence summary of why this decision was made, analyzing the game state and emotion data."
+                description="A 3-sentence summary of why this decision was made, analyzing the game state and emotion data.",
             ),
         },
-        required=["Bluffing", "Reasoning"]
+        required=["Bluffing", "Reasoning"],
     )
 
 
@@ -61,25 +62,28 @@ def get_move_schema() -> types.Schema:
         properties={
             "SuggestedCardRank": types.Schema(
                 type=types.Type.STRING,
-                description="The rank of the card the AI should announce it's playing (e.g., 'A', '2', 'K')."
+                description="The rank of the card the AI should announce it's playing (e.g., 'A', '2', 'K').",
             ),
             "CardsToPlay": types.Schema(
                 type=types.Type.ARRAY,
                 items=types.Schema(type=types.Type.STRING),
-                description="A list of the actual cards from the player's hand to play (e.g., ['2S', '2H']). This must be a subset of the 'hand' provided in the prompt."
+                description="A list of the actual cards from the player's hand to play (e.g., ['2S', '2H']). This must be a subset of the 'hand' provided in the prompt.",
             ),
             "Reasoning": types.Schema(
                 type=types.Type.STRING,
-                description="A concise explanation (2-3 sentences) for the suggested move, considering bluffing potential and game strategy."
+                description="A concise explanation (2-3 sentences) for the suggested move, considering bluffing potential and game strategy.",
             ),
         },
-        required=["SuggestedCardRank", "CardsToPlay", "Reasoning"]
+        required=["SuggestedCardRank", "CardsToPlay", "Reasoning"],
     )
 
 
 # --- Core API Call Function (Simplified) ---
 
-def generate_content_sdk(prompt: str, system_prompt: str, response_schema: types.Schema) -> dict | str:
+
+def generate_content_sdk(
+    prompt: str, system_prompt: str, response_schema: types.Schema
+) -> dict | str:
     """
     Sends a prompt to the Gemini API using the official SDK.
     The SDK handles retries and API error decoding.
@@ -121,34 +125,33 @@ def generate_content_sdk(prompt: str, system_prompt: str, response_schema: types
 
 # --- Business Logic Functions (Simplified) ---
 
-def analyze_bluff(move: str, state: str, emotion_data: str) -> dict:
+
+def analyze_bluff(state: str, emotion_data: str) -> dict:
     """
-    Determines if an opponent is bluffing based on their move, 
+    Determines if an opponent is bluffing based on their move,
     the game state, and emotional data.
     """
     basic_query = (
-        f"Is this player bluffing? Move: {move} Game State: {state} Emotion Data: {emotion_data}"
+        f"Is this player bluffing? New Game State: {state} Emotion Data: {emotion_data}"
     )
-    
+
     system_prompt = (
         "Your name is Otis. You are playing the card game Cheat. It is your job to determine whether the "
-        "player is bluffing or not. You will be given the player's move, the state of the game, "
+        "player is bluffing or not. You will be given the new state of the game after the players move, "
         "and data on the player (Facial Emotion Recognition & voice-to-text). "
-        "The data is the last 5 facial expression readings, as percentage confidence in up to seven emotions, "
-        "with the 6th line holding the latest recorded sentence of speech. "
         "Base your decision on the game state and the player's emotional data and return a JSON object."
     )
 
     result = generate_content_sdk(
-        prompt=basic_query, 
+        prompt=basic_query,
         system_prompt=system_prompt,
-        response_schema=get_cheat_analysis_schema()
+        response_schema=get_cheat_analysis_schema(),
     )
-    
+
     # Check if the result is an error string (type str) or the successful dict
     if isinstance(result, str):
         return {"Error": result}
-    
+
     return result
 
 
@@ -163,7 +166,7 @@ def move(hand: list, state: str) -> dict:
         f"The current game state is: {state}. What is the best move to make right now? "
         "What rank are you announcing, and what actual cards will you play from your hand. You can bluff."
     )
-    
+
     system_prompt = (
         "You are Otis, an expert Cheat player. Your goal is to get rid of all your cards. "
         "Analyze the hand and game state to determine the most strategic move, "
@@ -173,13 +176,13 @@ def move(hand: list, state: str) -> dict:
     )
 
     result = generate_content_sdk(
-        prompt=basic_query, 
+        prompt=basic_query,
         system_prompt=system_prompt,
-        response_schema=get_move_schema()
+        response_schema=get_move_schema(),
     )
-    
+
     # Check if the result is an error string (type str) or the successful dict
     if isinstance(result, str):
         return {"Error": result}
-        
+
     return result
