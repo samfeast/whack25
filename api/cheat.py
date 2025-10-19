@@ -32,11 +32,6 @@ class Cheat:
         for player in self.human_players:
             await player.websocket.send_json(message)
 
-    async def broadcast_povs(self) -> None:
-        # todo: ai player
-        for player in self.human_players:
-            await player.websocket.send_json(self.pov_data(player))
-
     @property
     def current_player(self):
         players = self.players
@@ -102,6 +97,12 @@ class Cheat:
         for player in self.players:
             print(player.name, json.dumps(self.pov_data(player), indent=4))
 
+    async def broadcast_povs(self) -> None:
+        # todo: ai player
+        for player in self.human_players:
+            await player.websocket.send_json(self.pov_data(player))
+        self.print_povs()
+
     def create_hands(self) -> None:
         random.shuffle(self.deck)
         hand_size = len(self.deck) // len(self.players)
@@ -121,12 +122,11 @@ class Cheat:
         # await first discard
         discard_list = await self.current_player.play_turn()
         await self.discard(discard_list)
-        self.print_povs()
 
         while True:
             done, pending = await asyncio.wait(
                 [
-                    asyncio.create_task(self.current_player.play_turn()),
+                    asyncio.create_task(self.current_player.play_turn_or_callout()),
                 ]
                 + [
                     asyncio.create_task(p.callout())
@@ -147,16 +147,13 @@ class Cheat:
             finished = done.pop()
             result = await finished
 
-            if finished is self.current_player.play_turn:
+            if finished is self.current_player.play_turn_or_callout():
                 if isinstance(result, list):
                     discard_list = result
                     await self.discard(discard_list)
                 elif isinstance(result, Player):
-                    await self.callout(result)
+                    player = result
+                    await self.callout(player)
             else:
-                if isinstance(result, Player):
-                    await self.callout(result)
-
-            # print player povs
-            for player in self.players:
-                print(player.name, self.pov_data(player))
+                result: Player
+                await self.callout(result)
