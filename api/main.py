@@ -2,8 +2,8 @@ import asyncio
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse
 import re
-from cheat import Cheat
-from player import HumanPlayer
+from api.cheat import Cheat
+from api.human_player import HumanPlayer
 
 app = FastAPI()
 

@@ -2,9 +2,10 @@ import asyncio
 import json
 import random
 from typing import Any
-
-from card import generate_deck, Card
-from player import Player, HumanPlayer, BotPlayer
+from api.card import generate_deck, Card
+from api.bot_player import BotPlayer
+from api.human_player import HumanPlayer
+from api.player import Player
 
 
 class Cheat:

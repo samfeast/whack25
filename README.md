@@ -7,3 +7,5 @@ https://alphacephei.com/vosk/models#:~:text=Apache%202.0-,vosk%2Dmodel%2Den%2Dus
 
 Gemini API key named OTIS & stored in .env
 (ie. OTIS = "{Key}")
+
+`uvicorn api.main:app --reload`
