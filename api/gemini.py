@@ -78,6 +78,27 @@ def get_move_schema() -> types.Schema:
     )
 
 
+def get_move_or_callout_schema() -> types.Schema:
+    return types.Schema(
+        type=types.Type.OBJECT,
+        required=["call_bluff", "cards_to_play", "reasoning"],
+        properties={
+            "call_bluff": types.Schema(
+                type=types.Type.BOOLEAN,
+            ),
+            "cards_to_play": types.Schema(
+                type=types.Type.ARRAY,
+                items=types.Schema(
+                    type=types.Type.STRING,
+                ),
+            ),
+            "reasoning": types.Schema(
+                type=types.Type.STRING,
+            ),
+        },
+    )
+
+
 # --- Core API Call Function (Simplified) ---
 
 
@@ -179,6 +200,39 @@ def move(hand: list, state: str) -> dict:
         prompt=basic_query,
         system_prompt=system_prompt,
         response_schema=get_move_schema(),
+    )
+
+    # Check if the result is an error string (type str) or the successful dict
+    if isinstance(result, str):
+        return {"Error": result}
+
+    return result
+
+
+def move_or_callout(state: dict, emotion_data: str) -> dict:
+    """
+    Suggests the best move (cards to play and rank to announce) for the AI.
+    """
+    hand = map(lambda c: str(c), state.pop("hand"))
+    hand = ", ".join(hand)
+
+    basic_query = (
+        f"You are playing the card game Cheat, you'd like to win. Your hand is: {hand}. "
+        f"The current game state is: {state}. The previous player appears {emotion_data}. What is the best move to make right now? "
+        "What rank are you announcing, and what actual cards will you play from your hand. You can bluff."
+    )
+
+    system_prompt = (
+        "You are Otis, an expert Cheat player. Your goal is to get rid of all your cards. "
+        "Analyze the hand and game state to determine the most strategic move. "
+        "Suggest whether to call out the previous player on their bluff or which cards to play. "
+        "Return the decision as a JSON object."
+    )
+
+    result = generate_content_sdk(
+        prompt=basic_query,
+        system_prompt=system_prompt,
+        response_schema=get_move_or_callout_schema(),
     )
 
     # Check if the result is an error string (type str) or the successful dict

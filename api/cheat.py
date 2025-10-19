@@ -137,20 +137,21 @@ class Cheat:
         await self.discard(discard_list)
 
         while True:
+            tasks = []
+
+            if len(self.deck) == 0:
+                tasks.append(self.current_player.play_turn())
+            else:
+                tasks.append(self.current_player.play_turn_or_callout())
+                for player in self.players:
+                    if player == self.current_player or player == self.previous_player:
+                        continue
+                    tasks.append(player.callout())
+
+            tasks = map(asyncio.create_task, tasks)
+
             done, pending = await asyncio.wait(
-                [
-                    asyncio.create_task(self.current_player.play_turn_or_callout()),
-                ]
-                + [
-                    asyncio.create_task(p.callout())
-                    for p in list(
-                        filter(
-                            lambda p: p.name != self.previous_player.name
-                            and p.name != self.current_player.name,
-                            self.players,
-                        )
-                    )
-                ],
+                tasks,
                 return_when=asyncio.FIRST_COMPLETED,
             )
 
@@ -166,6 +167,5 @@ class Cheat:
             elif isinstance(result, Player):
                 player = result
                 await self.callout(player)
-                # await discard
                 discard_list = await self.current_player.play_turn()
                 await self.discard(discard_list)

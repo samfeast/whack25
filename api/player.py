@@ -2,6 +2,8 @@ import asyncio
 import json
 from abc import ABC, abstractmethod
 from starlette.websockets import WebSocket
+
+from gemini import move_or_callout
 from card import Card
 from gemini import analyze_bluff, move
 
@@ -24,6 +26,11 @@ class Player(ABC):
     @abstractmethod
     async def callout(self) -> "Player":
         pass
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Player):
+            return False
+        return self.name == other.name
 
 
 class HumanPlayer(Player):
@@ -86,7 +93,12 @@ class BotPlayer(Player):
         return [Card.from_str(c) for c in response.get("CardsToPlay")]
 
     async def play_turn_or_callout(self) -> list[Card] | Player:
-        return await self.play_turn()
+        response = move_or_callout(self.pov_board_state, "pretty neutral")
+        print(response.get("reasoning"))
+        if response.get("call_bluff"):
+            return self
+        else:
+            return [Card.from_str(c) for c in response.get("cards_to_play")]
 
     async def callout(self) -> Player:
         response = analyze_bluff(json.dumps(self.pov_board_state), "pretty neutral")
