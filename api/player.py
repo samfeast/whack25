@@ -89,6 +89,7 @@ class BotPlayer(Player):
 
     async def callout(self) -> Player:
         response = analyze_bluff(json.dumps(self.pov_board_state), "", "")
+        print(response.get("Reasoning"))
         if response.get("Bluffing"):
             return self
         while True:
