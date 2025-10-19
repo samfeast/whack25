@@ -58,7 +58,7 @@ class Card:
         self.rank = rank
 
     @staticmethod
-    def generate_deck() -> list["Card"]:
+    def create_deck() -> list["Card"]:
         return [Card(suit, rank) for suit in Suit for rank in Rank.range()]
 
     @staticmethod
