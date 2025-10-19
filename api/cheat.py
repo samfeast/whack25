@@ -107,7 +107,6 @@ class Cheat:
             print(player.name, json.dumps(self.pov_data(player), indent=4))
 
     async def broadcast_povs(self) -> None:
-        # todo: ai player
         for player in self.human_players:
             await player.websocket.send_json(self.pov_data(player))
         for player in self.bot_players:
@@ -161,19 +160,14 @@ class Cheat:
             finished = done.pop()
             result = await finished
 
-            if finished is self.current_player.play_turn_or_callout:
-                if isinstance(result, list):
-                    discard_list = result
-                    await self.discard(discard_list)
-                elif isinstance(result, Player):
-                    player = result
-                    await self.callout(player)
-                    # await discard
-                    discard_list = await self.current_player.play_turn()
-                    await self.discard(discard_list)
+            if isinstance(result, list):
+                print("discard")
+                discard_list = result
+                await self.discard(discard_list)
             elif isinstance(result, Player):
-                await self.callout(result)
-                result: Player
+                print("callout")
+                player = result
+                await self.callout(player)
                 # await discard
                 discard_list = await self.current_player.play_turn()
                 await self.discard(discard_list)
