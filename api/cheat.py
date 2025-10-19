@@ -2,7 +2,8 @@ import asyncio
 import json
 import random
 from typing import Any
-from api.card import generate_deck, Card
+from api.action import Action
+from api.card import Card, Rank
 from api.bot_player import BotPlayer
 from api.human_player import HumanPlayer
 from api.player import Player
@@ -13,9 +14,9 @@ class Cheat:
         self.playing = False
         self.current_player_index = 0
         self.players: list[Player] = []
-        self.deck = generate_deck()
-        self.current_value = 1
-        self.log = "Game started"
+        self.deck = Card.create_deck()
+        self.current_rank = Rank(1)
+        self.log: list[Action] = []
 
     @property
     def human_players(self) -> list[HumanPlayer]:
@@ -56,10 +57,10 @@ class Cheat:
         self.current_player_index %= len(self.players)
 
     def increment_current_value(self):
-        if self.current_value == 13:
-            self.current_value = 1
+        if self.current_rank == 13:
+            self.current_rank = 1
         else:
-            self.current_value += 1
+            self.current_rank += 1
 
     def pov_data(self, player: Player):
         return {
@@ -76,7 +77,7 @@ class Cheat:
             ],
             "waiting-for": self.current_player.name,
             "own-turn": self.current_player.name == player.name,
-            "current_rank": self.current_value,
+            "current_rank": self.current_rank,
             "log": self.log,
         }
 
@@ -88,7 +89,7 @@ class Cheat:
         self.deck += discard_list
         self.current_player.cheated = False
         for card in discard_list:
-            if card.value != self.current_value:
+            if card.rank != self.current_rank:
                 self.current_player.cheated = True
                 break
         self.log = f"{self.current_player.name} discarded {len(discard_list)} cards"
@@ -105,7 +106,7 @@ class Cheat:
             correct = False
             caller.hand += self.deck
         self.deck = []
-        self.current_value = 1
+        self.current_rank = 1
         self.log = f"{self.current_player.name} {"correctly" if correct else "incorrectly"} called {self.previous_player.name} a cheat"
         await self.broadcast_povs()
 
