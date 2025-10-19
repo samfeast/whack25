@@ -89,9 +89,9 @@ function WaitingScreen({ setScreen }) {
   );
 }
 function GameScreen() {
-  const [playerHand, setPlayerHand] = useState([]);
+  const [playerHand, setPlayerHand] = useState(["D4"]);
   const [stackSize, setStackSize] = useState(0);
-  const [ownTurn, setOwnTurn] = useState(false);
+  const [ownTurn, setOwnTurn] = useState(true);
   const [lastRank, setLastRank] = useState(0);
   const [playerInfo, setPlayerInfo] = useState([]);
 
@@ -103,37 +103,14 @@ function GameScreen() {
     if (!ws?.current) return;
 
     const handleMessage = (event) => {
-      const message = JSON.parse(event.data);
+      const data = JSON.parse(event.data);
 
-      switch (message.type) {
-        case "hand":
-          // Example: { type: "hand", data: ["C2", "S9", "D13"] }
-          setPlayerHand(message.data);
-          break;
-
-        case "stack-size":
-          // Example: { type: "stack-size", data: 11 }
-          setStackSize(message.data);
-          break;
-
-        case "last-rank":
-          // Example: { type: "last-rank", data: 4 }
-          setLastRank(message.data);
-          break;
-
-        case "own-turn":
-          // Example: { type: "own-turn", data: true }
-          setOwnTurn(message.data);
-          break;
-
-        case "player-info":
-          // Example: { type: "player-info", data: [ { name: "Alice", cards: 5, message: "..." }, ... ] }
-          setPlayerInfo(message.data);
-          break;
-
-        default:
-          console.warn("Unknown message type:", message.type);
-      }
+      if (data.hand) setPlayerHand(data.hand);
+      if (typeof data["stack-size"] === "number")
+        setStackSize(data["stack-size"]);
+      if (typeof data["own-turn"] === "boolean") setOwnTurn(data["own-turn"]);
+      if (typeof data.current_rank === "number") setLastRank(data.current_rank);
+      if (Array.isArray(data.player_info)) setPlayerInfo(data.player_info);
     };
 
     ws.current.addEventListener("message", handleMessage);
@@ -151,10 +128,19 @@ function GameScreen() {
     );
   };
 
-  const handlePlaySelectedCards = () => {
+  const handlePlaySelectedCards = async () => {
     if (selectedCards.length === 0) {
       alert("No cards selected!");
       return;
+    }
+
+    try {
+      const response = await fetch(`/fer.txt?ts=${Date.now()}`);
+      const text = await response.text();
+
+      ws.current.send(JSON.stringify({ callout: selectedCards, data: text }));
+    } catch (err) {
+      console.error("Error reading file:", err);
     }
 
     setLastRank((prev) => (prev + 1 > 13 ? 1 : prev + 1));
@@ -163,11 +149,6 @@ function GameScreen() {
     const selectedSet = new Set(selectedCards);
     setPlayerHand((prev) => prev.filter((c) => !selectedSet.has(c)));
     setSelectedCards([]);
-    ws.current.send(
-      JSON.stringify({
-        discard: selectedCards,
-      })
-    );
   };
 
   return (
@@ -181,7 +162,6 @@ function GameScreen() {
       <ActionButton
         onPlaySelectedCards={handlePlaySelectedCards}
         ownTurn={ownTurn}
-        lastRank={lastRank}
       />
       <PlayerDisplay playerInfo={playerInfo} />
     </div>
@@ -265,12 +245,12 @@ function CardStack({ stackSize }) {
 }
 
 // The "Call Cheat" and "Play Selected Cards" buttons
-function ActionButton({ onPlaySelectedCards, ownTurn, lastRank }) {
+function ActionButton({ onPlaySelectedCards, ownTurn }) {
   const ws = useWebSocket();
 
   const handleCallCheat = async () => {
     try {
-      const response = await fetch("/fer.txt");
+      const response = await fetch(`/fer.txt?ts=${Date.now()}`);
       const text = await response.text();
 
       ws.current.send(JSON.stringify({ callout: true, data: text }));
