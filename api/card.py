@@ -10,26 +10,14 @@ class Suit(Enum):
 
 
 class Rank:
-    def __init__(self, value: int | str):
-        if isinstance(value, int):
-            self.value = value
-        elif isinstance(value, str):
-            match value:
-                case "A":
-                    self.value = 1
-                case "J":
-                    self.value = 11
-                case "Q":
-                    self.value = 12
-                case "K":
-                    self.value = 13
-                case _:
-                    self.value = int(value)
-        else:
-            raise TypeError("Rank must be int or str")
+    def __init__(self, value: int):
+        if not isinstance(value, int):
+            raise TypeError("Rank must be int")
 
-        if self.value < 1 or self.value > 13:
+        if value < 1 or value > 13:
             raise ValueError("Rank must be between 1 and 13")
+
+        self.value = value
 
     def __int__(self) -> int:
         return self.value
@@ -44,17 +32,7 @@ class Rank:
         return self.value == int(other)
 
     def __repr__(self) -> str:
-        match self.value:
-            case 1:
-                return "A"
-            case 11:
-                return "J"
-            case 12:
-                return "Q"
-            case 13:
-                return "K"
-            case _:
-                return str(self.value)
+        return str(self.value)
 
     def increment(self) -> None:
         if self.value == 13:
@@ -68,20 +46,29 @@ class Rank:
         else:
             self.value -= 1
 
+    @staticmethod
+    def range():
+        for i in range(1, 14):
+            yield Rank(i)
+
 
 class Card:
-    def __init__(self, suit: Suit, value: int) -> None:
+    def __init__(self, suit: Suit, rank: Rank) -> None:
         self.suit = suit
-        self.value = value
+        self.rank = rank
+
+    @staticmethod
+    def generate_deck() -> list["Card"]:
+        return [Card(suit, rank) for suit in Suit for rank in Rank.range()]
 
     @staticmethod
     def from_str(s: str) -> "Card":
         suit = Suit(s[0].upper())
-        value = int(s[1:])
-        return Card(suit, value)
+        rank = Rank(int(s[1:]))
+        return Card(suit, rank)
 
     def __str__(self) -> str:
-        return f"{self.suit.value}{self.value}"
+        return f"{self.suit.value}{self.rank}"
 
     def __repr__(self) -> str:
         return str(self)
@@ -91,7 +78,3 @@ class Card:
 
     def __hash__(self) -> int:
         return hash(str(self))
-
-
-def generate_deck() -> list[Card]:
-    return [Card(suit, value) for suit in Suit for value in range(1, 14)]
