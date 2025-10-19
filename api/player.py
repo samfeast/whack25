@@ -82,6 +82,7 @@ class BotPlayer(Player):
         response = move(
             list(map(lambda c: str(c), self.hand)), json.dumps(self.pov_board_state)
         )
+        print(response)
         return [Card.from_str(c) for c in response.get("CardsToPlay")]
 
     async def play_turn_or_callout(self) -> list[Card] | Player:
