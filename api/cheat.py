@@ -59,12 +59,18 @@ class Cheat:
         return {
             "name": player.name,
             "hand": list(map(lambda c: str(c), player.hand)),
-            "players": {
-                p.name: {"hand": len(p.hand), "last_discard": len(p.last_discard)}
+            "stack-size": len(self.deck),
+            "player_info": [
+                {
+                    "name": p.name,
+                    "cards": len(p.hand),
+                    "last-discard": len(p.last_discard),
+                }
                 for p in list(filter(lambda _p: _p.name != player.name, self.players))
-            },
-            "waiting_for": self.current_player.name,
-            "current_value": self.current_value,
+            ],
+            "waiting-for": self.current_player.name,
+            "own-turn": self.current_player.name == player.name,
+            "current_rank": self.current_value,
         }
 
     async def discard(self, discard_list: list[Card]) -> None:
@@ -107,6 +113,9 @@ class Cheat:
         for player in self.players:
             for i in range(hand_size):
                 player.hand.append(self.deck.pop())
+        player_iterator = iter(self.players)
+        while len(self.deck) > 0:
+            next(player_iterator).hand.append(self.deck.pop())
 
     async def start(self):
         if not self.all_ready:
