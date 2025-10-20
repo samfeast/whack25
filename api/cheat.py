@@ -9,6 +9,23 @@ from api.human_player import HumanPlayer
 from api.player import Player
 
 
+class Queue:
+    def __init__(self) -> None:
+        self.queue: list[Player] = []
+        self.index = -1
+
+    def __len__(self) -> int:
+        return len(self.queue)
+
+    def add(self, player: Player) -> None:
+        self.queue.append(player)
+
+    def next(self) -> Player:
+        self.index += 1
+        self.index %= len(self)
+        return self.queue[self.index]
+
+
 class Cheat:
     def __init__(self):
         self.playing = False
