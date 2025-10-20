@@ -35,15 +35,15 @@ class Cheat:
         self.current_rank = Rank(1)
         self.log: list[Action] = []
 
-    @property
-    def human_players(self) -> list[HumanPlayer]:
-        return list(
-            filter(lambda player: isinstance(player, HumanPlayer), self.players)
-        )
-
-    @property
-    def bot_players(self) -> list[BotPlayer]:
-        return list(filter(lambda player: isinstance(player, BotPlayer), self.players))
+    # @property
+    # def human_players(self) -> list[HumanPlayer]:
+    #     return list(
+    #         filter(lambda player: isinstance(player, HumanPlayer), self.players)
+    #     )
+    #
+    # @property
+    # def bot_players(self) -> list[BotPlayer]:
+    #     return list(filter(lambda player: isinstance(player, BotPlayer), self.players))
 
     def join(self, player: Player):
         self.players.append(player)
@@ -56,9 +56,9 @@ class Cheat:
     def all_ready(self):
         return len(self.players) != 0 and all(map(lambda p: p.ready, self.players))
 
-    async def broadcast(self, message: Any):
-        for player in self.human_players:
-            await player.websocket.send_json(message)
+    # async def broadcast(self, message: Any):
+    #     for player in self.human_players:
+    #         await player.websocket.send_json(message)
 
     @property
     def current_player(self):
@@ -125,10 +125,11 @@ class Cheat:
             print(player.name, json.dumps(self.pov_data(player), indent=4))
 
     async def broadcast_povs(self) -> None:
-        for player in self.human_players:
-            await player.websocket.send_json(self.pov_data(player))
-        for player in self.bot_players:
-            await player.update_pov(self.pov_data(player))
+        for player in self.players:
+            if isinstance(player, HumanPlayer):
+                await player.websocket.send_json(self.pov_data(player))
+            elif isinstance(player, BotPlayer):
+                await player.update_pov(self.pov_data(player))
 
     def create_hands(self) -> None:
         random.shuffle(self.deck)

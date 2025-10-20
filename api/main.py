@@ -45,13 +45,13 @@ async def websocket_endpoint(websocket: WebSocket):
         name = re.sub(r"\s+", "", data)
         player = HumanPlayer(websocket, name)
         cheat.join(player)
-        await cheat.broadcast({"message": f"Player {name} joined."})
+        # await cheat.broadcast({"message": f"Player {name} joined."})
 
         # ready
         await websocket.receive_text()
         player.ready_up()
         print(f"{player.name} ready")
-        await cheat.broadcast({"message": f"Player {name} ready."})
+        # await cheat.broadcast({"message": f"Player {name} ready."})
         asyncio.create_task(cheat.start())
 
         while True:
