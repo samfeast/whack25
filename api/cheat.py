@@ -1,7 +1,6 @@
 import asyncio
 import json
 import random
-from typing import Any
 from api.action import Action, Discard, CallBluff, Pass
 from api.card import Card, Rank
 from api.bot_player import BotPlayer
@@ -12,28 +11,39 @@ from api.player import Player
 class Queue:
     def __init__(self) -> None:
         self.queue: list[Player] = []
-        self.index = -1
+        self.last_index = -1
 
     def __len__(self) -> int:
         return len(self.queue)
+
+    @property
+    def all(self) -> list[Player]:
+        return self.queue
+
+    @property
+    def index(self) -> int:
+        return (self.last_index + 1) % len(self)
+
+    @property
+    def current(self) -> Player:
+        return self.queue[self.index]
 
     def add(self, player: Player) -> None:
         self.queue.append(player)
 
     def next(self) -> Player:
-        self.index += 1
-        self.index %= len(self)
-        return self.queue[self.index]
+        current = self.current
+        self.last_index = self.index
+        return current
 
 
 class Cheat:
     def __init__(self):
         self.playing = False
-        self.current_player_index = 0
-        self.players: list[Player] = []
         self.deck = Card.create_deck()
         self.current_rank = Rank(1)
         self.log: list[Action] = []
+        self.queue: Queue = Queue()
 
     # @property
     # def human_players(self) -> list[HumanPlayer]:
@@ -45,8 +55,8 @@ class Cheat:
     # def bot_players(self) -> list[BotPlayer]:
     #     return list(filter(lambda player: isinstance(player, BotPlayer), self.players))
 
-    def join(self, player: Player):
-        self.players.append(player)
+    def join(self, player: Player) -> None:
+        self.queue.add(player)
 
     @property
     def last_action(self) -> Action:
@@ -54,30 +64,14 @@ class Cheat:
 
     @property
     def all_ready(self):
-        return len(self.players) != 0 and all(map(lambda p: p.ready, self.players))
+        return len(self.queue) != 0 and all(map(lambda p: p.ready, self.queue.all))
 
     # async def broadcast(self, message: Any):
     #     for player in self.human_players:
     #         await player.websocket.send_json(message)
 
-    @property
-    def current_player(self):
-        players = self.players
-        return players[self.current_player_index]
-
-    @property
-    def previous_player_index(self) -> int:
-        return self.current_player_index - 1 % len(self.players)
-
-    @property
-    def previous_player(self) -> Player:
-        return self.players[self.previous_player_index]
-
-    def increment_player(self):
-        self.current_player_index += 1
-        self.current_player_index %= len(self.players)
-
     def pov_data(self, player: Player):
+        current_player = self.queue.current
         return {
             "name": player.name,
             "hand": list(map(lambda c: str(c), sorted(player.hand))),
@@ -88,10 +82,10 @@ class Cheat:
                     "cards": len(p.hand),
                     "last-discard": len(p.last_discard),
                 }
-                for p in list(filter(lambda _p: _p.name != player.name, self.players))
+                for p in list(filter(lambda _p: _p.name != player.name, self.queue.all))
             ],
-            "waiting-for": self.current_player.name,
-            "own-turn": self.current_player.name == player.name,
+            "waiting-for": current_player.name,
+            "own-turn": current_player.name == player.name,
             "current_rank": repr(self.current_rank),
             "log": list(map(lambda a: repr(a), self.log)),
         }
@@ -100,9 +94,8 @@ class Cheat:
         for card in discard_list:
             player.hand.remove(card)
         self.deck += discard_list
-        self.log.append(Discard(self.current_player, discard_list, self.current_rank))
+        self.log.append(Discard(player, discard_list, self.current_rank))
         self.current_rank.increment()
-        self.increment_player()
         await self.broadcast_povs()
 
     async def call_bluff(self, challenger: Player, action: Discard) -> None:
@@ -121,11 +114,11 @@ class Cheat:
         await self.broadcast_povs()
 
     def print_povs(self) -> None:
-        for player in self.players:
+        for player in self.queue.all:
             print(player.name, json.dumps(self.pov_data(player), indent=4))
 
     async def broadcast_povs(self) -> None:
-        for player in self.players:
+        for player in self.queue.all:
             if isinstance(player, HumanPlayer):
                 await player.websocket.send_json(self.pov_data(player))
             elif isinstance(player, BotPlayer):
@@ -133,11 +126,11 @@ class Cheat:
 
     def create_hands(self) -> None:
         random.shuffle(self.deck)
-        hand_size = len(self.deck) // len(self.players)
-        for player in self.players:
+        hand_size = len(self.deck) // len(self.queue)
+        for player in self.queue.all:
             for i in range(hand_size):
                 player.hand.append(self.deck.pop())
-        player_iterator = iter(self.players)
+        player_iterator = iter(self.queue.all)
         while len(self.deck) > 0:
             next(player_iterator).hand.append(self.deck.pop())
 
@@ -146,24 +139,26 @@ class Cheat:
             return
         print("starting")
 
-        self.players.append(BotPlayer())
+        self.queue.add(BotPlayer())
         self.create_hands()
         self.playing = True
         await self.broadcast_povs()
 
         # await first discard
-        discard_list = await self.current_player.play_turn()
-        await self.discard(self.current_player, discard_list)
+        player = self.queue.next()
+        discard_list = await player.play_turn()
+        await self.discard(player, discard_list)
 
         while True:
+            player = self.queue.next()
             tasks = []
 
             if isinstance(self.last_action, CallBluff):
-                tasks.append(self.current_player.play_turn())
+                tasks.append(player.play_turn())
             else:
-                tasks.append(self.current_player.play_turn_or_callout())
-                for player in self.players:
-                    if player == self.current_player or player == self.previous_player:
+                tasks.append(player.play_turn_or_callout())
+                for player in self.queue.all:
+                    if player == player or player == self.last_action.player:
                         continue
                     tasks.append(player.callout())
 
@@ -182,9 +177,9 @@ class Cheat:
 
             if isinstance(result, list):
                 discard_list = result
-                await self.discard(self.current_player, discard_list)
+                await self.discard(player, discard_list)
             elif isinstance(result, Player):
                 player = result
                 await self.call_bluff(player, self.last_action)
-                discard_list = await self.current_player.play_turn()
-                await self.discard(self.current_player, discard_list)
+                discard_list = await player.play_turn()
+                await self.discard(player, discard_list)
