@@ -31,6 +31,7 @@ class Cheat:
     def join(self, player: Player):
         self.players.append(player)
 
+    @property
     def last_action(self) -> Action:
         return self.log[-1]
 
@@ -74,7 +75,7 @@ class Cheat:
             ],
             "waiting-for": self.current_player.name,
             "own-turn": self.current_player.name == player.name,
-            "current_rank": self.current_rank,
+            "current_rank": repr(self.current_rank),
             "log": list(map(lambda a: repr(a), self.log)),
         }
 
@@ -90,12 +91,14 @@ class Cheat:
     async def call_bluff(self, challenger: Player, action: Discard) -> None:
         bluffer = action.player
         cheated = not action.is_valid()
+        print(cheated)
         if cheated:
             bluffer.hand += self.deck
         else:
             challenger.hand += self.deck
 
         self.deck = []
+        print(self.deck)
         self.current_rank = Rank(1)
         self.log.append(CallBluff(challenger, action.player, cheated))
         await self.broadcast_povs()
@@ -132,12 +135,12 @@ class Cheat:
 
         # await first discard
         discard_list = await self.current_player.play_turn()
-        await self.discard(discard_list)
+        await self.discard(self.current_player, discard_list)
 
         while True:
             tasks = []
 
-            if isinstance(self.last_action(), CallBluff):
+            if isinstance(self.last_action, CallBluff):
                 tasks.append(self.current_player.play_turn())
             else:
                 tasks.append(self.current_player.play_turn_or_callout())
@@ -161,9 +164,9 @@ class Cheat:
 
             if isinstance(result, list):
                 discard_list = result
-                await self.discard(discard_list)
+                await self.discard(self.current_player, discard_list)
             elif isinstance(result, Player):
                 player = result
-                await self.call_bluff(player)
+                await self.call_bluff(player, self.last_action)
                 discard_list = await self.current_player.play_turn()
-                await self.discard(discard_list)
+                await self.discard(self.current_player, discard_list)
