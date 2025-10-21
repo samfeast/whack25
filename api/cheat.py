@@ -157,10 +157,10 @@ class Cheat:
                 tasks.append(player.play_turn())
             else:
                 tasks.append(player.play_turn_or_callout())
-                for player in self.queue.all:
-                    if player == player or player == self.last_action.player:
+                for _player in self.queue.all:
+                    if _player == player or _player == self.last_action.player:
                         continue
-                    tasks.append(player.callout())
+                    tasks.append(_player.callout())
 
             tasks = map(asyncio.create_task, tasks)
 
