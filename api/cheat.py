@@ -1,40 +1,12 @@
 import asyncio
 import json
 import random
-from api.action import Action, Discard, CallBluff, Pass
+from api.action import Action, Discard, CallBluff
 from api.card import Card, Rank
 from api.bot_player import BotPlayer
 from api.human_player import HumanPlayer
 from api.player import Player
-
-
-class Queue:
-    def __init__(self) -> None:
-        self.queue: list[Player] = []
-        self.last_index = -1
-
-    def __len__(self) -> int:
-        return len(self.queue)
-
-    @property
-    def all(self) -> list[Player]:
-        return self.queue
-
-    @property
-    def index(self) -> int:
-        return (self.last_index + 1) % len(self)
-
-    @property
-    def current(self) -> Player:
-        return self.queue[self.index]
-
-    def add(self, player: Player) -> None:
-        self.queue.append(player)
-
-    def next(self) -> Player:
-        current = self.current
-        self.last_index = self.index
-        return current
+from api.queue import Queue
 
 
 class Cheat:
